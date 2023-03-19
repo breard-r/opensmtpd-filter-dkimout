@@ -1,3 +1,6 @@
+mod handshake;
+
 fn main() {
-    println!("Hello, world!");
+	handshake::read_config();
+	handshake::register_filter();
 }
