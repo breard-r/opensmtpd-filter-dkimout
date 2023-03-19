@@ -8,3 +8,4 @@ license = "MIT OR Apache-2.0"
 publish = false
 
 [dependencies]
+nom = "^7.1"

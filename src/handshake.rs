@@ -6,7 +6,9 @@ pub fn read_config() {
 	let stdin = std::io::stdin();
 	loop {
 		buffer.clear();
-		stdin.read_line(&mut buffer).unwrap();
+		if stdin.read_line(&mut buffer).unwrap() == 0 {
+			crate::eof();
+		}
 		let entry = buffer.trim_end();
 		if entry == CONFIG_END {
 			return;
