@@ -9,6 +9,10 @@ pub struct Entry {
 }
 
 impl Entry {
+	pub fn get_msg_id(&self) -> String {
+		format!("{}.{}", self.session_id, self.token)
+	}
+
 	pub fn get_session_id(&self) -> &str {
 		&self.session_id
 	}
