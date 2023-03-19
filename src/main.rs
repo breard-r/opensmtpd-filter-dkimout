@@ -29,11 +29,10 @@ fn main() {
 						}
 					}
 					None => {
+						let msg = Message::from_entry(&entry);
 						if !entry.is_end_of_message() {
-							let msg = Message::from_line(entry.get_data());
 							messages.insert(msg_id, msg);
 						} else {
-							let msg = Message::new();
 							msg.sign_and_return();
 						}
 					}
