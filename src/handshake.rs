@@ -1,20 +1,16 @@
-pub const CONFIG_END: &str = "config|ready";
-pub const CONFIG_TAG: &str = "config|";
+use crate::stdin_reader::StdinReader;
 
-pub fn read_config() {
-	let mut buffer = String::new();
-	let stdin = std::io::stdin();
+pub const CONFIG_END: &[u8] = b"config|ready\n";
+pub const CONFIG_TAG: &[u8] = b"config|";
+
+pub fn read_config(reader: &mut StdinReader) {
 	loop {
-		buffer.clear();
-		if stdin.read_line(&mut buffer).unwrap() == 0 {
-			crate::eof();
-		}
-		let entry = buffer.trim_end();
-		if entry == CONFIG_END {
+		let line = reader.read_line();
+		if line == CONFIG_END {
 			return;
 		}
-		if !entry.starts_with(CONFIG_TAG) {
-			eprintln!("invalid config line: {entry}");
+		if !line.starts_with(CONFIG_TAG) {
+			eprintln!("invalid config line: {line:?}");
 		}
 	}
 }

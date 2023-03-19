@@ -1,16 +1,18 @@
 mod entry;
 mod handshake;
+mod stdin_reader;
 
 use entry::Entry;
-use std::io::{BufRead, BufReader};
+use stdin_reader::StdinReader;
 
 const DEFAULT_BUFF_SIZE: usize = 1024;
 
 fn main() {
-	handshake::read_config();
+	let mut reader = StdinReader::new();
+	handshake::read_config(&mut reader);
 	handshake::register_filter();
 	loop {
-		match read_line() {
+		match Entry::from_bytes(&reader.read_line()) {
 			Ok(entry) => {
 				if !entry.is_end_of_message() {
 					println!("Debug: {entry:?}");
@@ -23,17 +25,4 @@ fn main() {
 			}
 		}
 	}
-}
-
-pub fn read_line() -> Result<Entry, String> {
-	let mut buffer = Vec::with_capacity(DEFAULT_BUFF_SIZE);
-	let mut stdin = BufReader::new(std::io::stdin());
-	if stdin.read_until(b'\n', &mut buffer).unwrap() == 0 {
-		crate::eof();
-	}
-	Entry::from_bytes(&buffer)
-}
-
-fn eof() {
-	std::process::exit(0x2a)
 }
