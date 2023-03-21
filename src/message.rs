@@ -28,6 +28,10 @@ impl Message {
 		self.lines.push(line.to_vec())
 	}
 
+	pub fn nb_lines(&self) -> usize {
+		self.lines.len()
+	}
+
 	pub fn sign_and_return(&self) {
 		// TODO: sign the message using DKIM
 		for line in &self.lines {
