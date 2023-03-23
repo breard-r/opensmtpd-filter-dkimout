@@ -11,7 +11,6 @@ use stdin_reader::StdinReader;
 
 const DEFAULT_BUFF_SIZE: usize = 1024;
 const LOG_LEVEL_ENV_VAR: &str = "OPENSMTPD_FILTER_DKIMOUT_LOG_LEVEL";
-const LOG_STYLE_ENV_VAR: &str = "OPENSMTPD_FILTER_DKIMOUT_LOG_STYLE";
 
 #[macro_export]
 macro_rules! display_bytes {
