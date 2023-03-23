@@ -10,6 +10,7 @@ use std::collections::HashMap;
 use stdin_reader::StdinReader;
 
 const DEFAULT_BUFF_SIZE: usize = 1024;
+const DEFAULT_MSG_SIZE: usize = 1024 * 1024;
 const LOG_LEVEL_ENV_VAR: &str = "OPENSMTPD_FILTER_DKIMOUT_LOG_LEVEL";
 
 #[macro_export]

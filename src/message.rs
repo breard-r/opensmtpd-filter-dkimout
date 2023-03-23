@@ -8,7 +8,8 @@ pub const RETURN_START: &[u8] = b"filter-dataline|";
 pub struct Message {
 	session_id: String,
 	token: String,
-	lines: Vec<Vec<u8>>,
+	content: Vec<u8>,
+	nb_lines: usize,
 }
 
 impl Message {
@@ -16,7 +17,8 @@ impl Message {
 		let mut ret = Self {
 			session_id: entry.get_session_id().to_string(),
 			token: entry.get_token().to_string(),
-			lines: Vec::new(),
+			content: Vec::with_capacity(crate::DEFAULT_MSG_SIZE),
+			nb_lines: 0,
 		};
 		if !entry.is_end_of_message() {
 			ret.append_line(entry.get_data());
@@ -25,16 +27,32 @@ impl Message {
 	}
 
 	pub fn append_line(&mut self, line: &[u8]) {
-		self.lines.push(line.to_vec())
+		self.nb_lines += 1;
+		if self.content.len() + line.len() > self.content.capacity() {
+			self.content.reserve(crate::DEFAULT_MSG_SIZE);
+		}
+		self.content.extend_from_slice(line);
+		match line.last() {
+			Some(&c) => {
+				if c != b'\r' {
+					self.content.push(b'\r');
+				}
+			}
+			None => {
+				self.content.push(b'\r');
+			}
+		}
+		self.content.push(b'\n');
 	}
 
 	pub fn nb_lines(&self) -> usize {
-		self.lines.len()
+		self.nb_lines
 	}
 
 	pub fn sign_and_return(&self) {
 		// TODO: sign the message using DKIM
-		for line in &self.lines {
+		let i = self.content.len() - 1;
+		for line in self.content[0..i].split(|&b| b == b'\n') {
 			self.print_line(line);
 		}
 		self.print_line(b".");
