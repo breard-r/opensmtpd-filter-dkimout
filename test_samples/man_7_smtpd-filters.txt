@@ -1,7 +1,0 @@
-config|smtpd-version|6.6.1
-config|smtp-session-timeout|300
-config|subsystem|smtp-in
-config|ready
-filter|0.5|1576146008.006099|smtp-in|data-line|7641df9771b4ed00|1ef1c203cc576e5d|line 1
-filter|0.5|1576146008.006103|smtp-in|data-line|7641df9771b4ed00|1ef1c203cc576e5d|line 2
-filter|0.5|1576146008.006105|smtp-in|data-line|7641df9771b4ed00|1ef1c203cc576e5d|.
