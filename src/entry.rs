@@ -1,4 +1,4 @@
-use nom::bytes::streaming::{tag, take_till1, take_while1};
+use nom::bytes::streaming::{tag, take_till, take_while1};
 use nom::IResult;
 
 #[derive(Debug)]
@@ -57,7 +57,7 @@ fn parse_delimiter(input: &[u8]) -> IResult<&[u8], &[u8]> {
 }
 
 fn parse_data(input: &[u8]) -> IResult<&[u8], Vec<u8>> {
-	let (input, s) = take_till1(is_eol)(input)?;
+	let (input, s) = take_till(is_eol)(input)?;
 	Ok((input, s.to_vec()))
 }
 
