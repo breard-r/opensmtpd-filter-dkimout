@@ -1,3 +1,4 @@
+mod canonicalization;
 mod entry;
 mod handshake;
 mod logs;
