@@ -1,4 +1,5 @@
 use crate::entry::Entry;
+use mailparse::parse_mail;
 use std::io::{BufWriter, Write};
 
 pub const RETURN_SEP: &[u8] = b"|";
@@ -50,7 +51,38 @@ impl Message {
 	}
 
 	pub fn sign_and_return(&self) {
-		// TODO: sign the message using DKIM
+		log::trace!("content:\n{}", crate::display_bytes!(&self.content));
+		match parse_mail(&self.content) {
+			Ok(parsed_msg) => {
+				log::trace!("mail parsed");
+				for h in parsed_msg.get_headers() {
+					log::trace!("{:?}", h);
+				}
+				match self.get_body() {
+					Some(body) => {
+						log::trace!("MailBody:\n{}", crate::display_bytes!(body));
+						// TODO: sign the message using DKIM
+					}
+					None => {
+						log::error!("{}: unable to find the body", self.session_id);
+					}
+				}
+			}
+			Err(e) => {
+				log::error!("{}: unable to parse message: {e}", self.session_id);
+			}
+		};
+		self.print_msg();
+	}
+
+	fn get_body(&self) -> Option<&[u8]> {
+		match self.content.windows(4).position(|w| w == b"\r\n\r\n") {
+			Some(body_index) => Some(&self.content[body_index + 4..]),
+			None => None,
+		}
+	}
+
+	fn print_msg(&self) {
 		let i = self.content.len() - 1;
 		for line in self.content[0..i].split(|&b| b == b'\n') {
 			self.print_line(line);
