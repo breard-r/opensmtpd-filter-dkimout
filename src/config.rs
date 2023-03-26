@@ -28,6 +28,8 @@ pub struct Config {
 	cryptoperiod: NonZeroU64,
 	#[arg(short, long, default_value_t = 1728000)]
 	revocation: u64,
+	#[arg(short = 'u', long)]
+	dns_update_cmd: String,
 	#[arg(short = 'x', long, default_value_t = 1296000)]
 	expiration: u64,
 	#[arg(short, long, action = clap::ArgAction::Count)]
@@ -53,6 +55,10 @@ impl Config {
 
 	pub fn cryptoperiod(&self) -> NonZeroU64 {
 		self.cryptoperiod
+	}
+
+	pub fn dns_update_cmd(&self) -> &str {
+		&self.dns_update_cmd
 	}
 
 	pub fn domains(&self) -> &[String] {
