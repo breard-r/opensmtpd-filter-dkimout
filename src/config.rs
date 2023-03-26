@@ -12,6 +12,8 @@ use std::path::{Path, PathBuf};
 pub struct Config {
 	#[arg(short, long, default_value_t = Algorithm::default())]
 	algorithm: Algorithm,
+	#[arg(short = 'b', long, value_name = "FILE")]
+	key_data_base: Option<PathBuf>,
 	#[arg(short, long, default_value_t = Canonicalization::default())]
 	canonicalization: Canonicalization,
 	#[arg(short, long)]
@@ -39,6 +41,7 @@ pub struct Config {
 impl Config {
 	pub fn init() -> Result<Self, String> {
 		let mut cnf = Self::parse();
+		cnf.key_data_base = process_key_data_base(cnf.key_data_base);
 		cnf.domain = process_domains(&cnf.domain, &cnf.domain_file)?;
 		cnf.header = process_headers(&cnf.header, crate::DEFAULT_HEADERS);
 		cnf.header_optional = process_headers(&cnf.header_optional, crate::DEFAULT_HEADERS_OPT);
@@ -47,6 +50,10 @@ impl Config {
 
 	pub fn algorithm(&self) -> Algorithm {
 		self.algorithm
+	}
+
+	pub fn key_data_base(&self) -> PathBuf {
+		self.key_data_base.clone().unwrap()
 	}
 
 	pub fn canonicalization(&self) -> Canonicalization {
@@ -94,6 +101,15 @@ impl Config {
 		} else {
 			None
 		}
+	}
+}
+
+fn process_key_data_base(opt: Option<PathBuf>) -> Option<PathBuf> {
+	match opt {
+		Some(p) => Some(p),
+		None => Some(PathBuf::from(
+			"/var/lib/opensmtpd-filter-dkimout/key-db.sqlite3",
+		)),
 	}
 }
 
