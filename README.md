@@ -12,6 +12,19 @@ DKIM filter for [OpenSMTPD](https://www.opensmtpd.org/).
 This is a work in progress, it is not supposed to work yet.
 
 
+## Building and packaging
+
+```
+cargo build --release
+```
+
+Packagers may want to set the `VARLIBDIR` to a custom value (default is `/var/lib`):
+
+```
+VARLIBDIR="/usr/local/var/lib" cargo build --release
+```
+
+
 ## Frequently Asked Questions
 
 ### Does this filter signs outgoing emails using DKIM or check the DKIM signature of incoming emails?

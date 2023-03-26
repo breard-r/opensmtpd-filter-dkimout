@@ -109,6 +109,7 @@ fn process_key_data_base(opt: Option<PathBuf>) -> Option<PathBuf> {
 		Some(p) => Some(p),
 		None => {
 			let mut path = PathBuf::from(crate::DEFAULT_LIB_DIR);
+			path.push(env!("CARGO_PKG_NAME"));
 			path.push(crate::DEFAULT_CNF_KEY_DB);
 			Some(path)
 		}

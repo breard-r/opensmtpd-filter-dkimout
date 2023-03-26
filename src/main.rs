@@ -24,7 +24,7 @@ const DEFAULT_CNF_HEADERS: &str = "from:reply-to:subject:date:to:cc";
 const DEFAULT_CNF_HEADERS_OPT: &str = "resent-date:resent-from:resent-to:resent-cc:in-reply-to:references:list-id:list-help:list-unsubscribe:list-subscribe:list-post:list-owner:list-archive";
 const DEFAULT_CNF_KEY_DB: &str = "key-db.sqlite3";
 const DEFAULT_CNF_REVOCATION: u64 = 1728000;
-const DEFAULT_LIB_DIR: &str = "/var/lib/opensmtpd-filter-dkimout";
+const DEFAULT_LIB_DIR: &str = env!("VARLIBDIR");
 const DEFAULT_MSG_SIZE: usize = 1024 * 1024;
 const LOG_LEVEL_ENV_VAR: &str = "OPENSMTPD_FILTER_DKIMOUT_LOG_LEVEL";
 
