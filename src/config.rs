@@ -4,6 +4,7 @@ use clap::Parser;
 use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
+use std::num::NonZeroU64;
 use std::path::PathBuf;
 
 #[derive(Parser, Debug)]
@@ -21,6 +22,8 @@ pub struct Config {
 	header: Vec<String>,
 	#[arg(short = 'o', long)]
 	header_optional: Vec<String>,
+	#[arg(short = 'p', long, default_value_t = NonZeroU64::new(15552000).unwrap())]
+	cryptoperiod: NonZeroU64,
 	#[arg(short, long, value_name = "FILE")]
 	revocation_list: Option<PathBuf>,
 	#[arg(short = 'x', long, default_value_t = 1296000)]
@@ -44,6 +47,10 @@ impl Config {
 
 	pub fn canonicalization(&self) -> Canonicalization {
 		self.canonicalization
+	}
+
+	pub fn cryptoperiod(&self) -> NonZeroU64 {
+		self.cryptoperiod
 	}
 
 	pub fn domains(&self) -> &[String] {
