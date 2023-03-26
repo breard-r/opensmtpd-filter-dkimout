@@ -9,7 +9,7 @@ publish = false
 
 [dependencies]
 clap = { version = "4.1.13", default-features = false, features = ["std", "derive"] }
-env_logger = "^0.10"
-log = "^0.4"
-mailparse = "^0.14"
-nom = "^7.1"
+env_logger = { version = "0.10.0", default-features = false }
+log = { version = "0.4.17", default-features = false }
+mailparse = { version = "0.14.0", default-features = false }
+nom = { version = "7.1.3", default-features = false }
