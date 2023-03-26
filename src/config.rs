@@ -26,15 +26,15 @@ pub struct Config {
 	header: Vec<String>,
 	#[arg(short = 'o', long)]
 	header_optional: Vec<String>,
-	#[arg(short = 'p', long, default_value_t = NonZeroU64::new(15552000).unwrap())]
+	#[arg(short = 'p', long, default_value_t = NonZeroU64::new(crate::DEFAULT_CNF_CRYPTOPERIOD).unwrap())]
 	cryptoperiod: NonZeroU64,
-	#[arg(short, long, default_value_t = 1728000)]
+	#[arg(short, long, default_value_t = crate::DEFAULT_CNF_REVOCATION)]
 	revocation: u64,
 	#[arg(short = 'u', long)]
 	dns_update_cmd: String,
 	#[arg(short, long, action = clap::ArgAction::Count)]
 	verbose: u8,
-	#[arg(short = 'x', long, default_value_t = 1296000)]
+	#[arg(short = 'x', long, default_value_t = crate::DEFAULT_CNF_EXPIRATION)]
 	expiration: u64,
 }
 
@@ -43,8 +43,8 @@ impl Config {
 		let mut cnf = Self::parse();
 		cnf.key_data_base = process_key_data_base(cnf.key_data_base);
 		cnf.domain = process_domains(&cnf.domain, &cnf.domain_file)?;
-		cnf.header = process_headers(&cnf.header, crate::DEFAULT_HEADERS);
-		cnf.header_optional = process_headers(&cnf.header_optional, crate::DEFAULT_HEADERS_OPT);
+		cnf.header = process_headers(&cnf.header, crate::DEFAULT_CNF_HEADERS);
+		cnf.header_optional = process_headers(&cnf.header_optional, crate::DEFAULT_CNF_HEADERS_OPT);
 		Ok(cnf)
 	}
 
@@ -107,9 +107,11 @@ impl Config {
 fn process_key_data_base(opt: Option<PathBuf>) -> Option<PathBuf> {
 	match opt {
 		Some(p) => Some(p),
-		None => Some(PathBuf::from(
-			"/var/lib/opensmtpd-filter-dkimout/key-db.sqlite3",
-		)),
+		None => {
+			let mut path = PathBuf::from(crate::DEFAULT_LIB_DIR);
+			path.push(crate::DEFAULT_CNF_KEY_DB);
+			Some(path)
+		}
 	}
 }
 

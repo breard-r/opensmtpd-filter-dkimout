@@ -7,14 +7,24 @@ mod logs;
 mod message;
 mod stdin_reader;
 
+use algorithm::Algorithm;
+use canonicalization::CanonicalizationType;
 use entry::Entry;
 use message::Message;
 use std::collections::HashMap;
 use stdin_reader::StdinReader;
 
 const DEFAULT_BUFF_SIZE: usize = 1024;
-const DEFAULT_HEADERS: &str = "from:reply-to:subject:date:to:cc";
-const DEFAULT_HEADERS_OPT: &str = "resent-date:resent-from:resent-to:resent-cc:in-reply-to:references:list-id:list-help:list-unsubscribe:list-subscribe:list-post:list-owner:list-archive";
+const DEFAULT_CNF_ALGORITHM: Algorithm = Algorithm::Rsa2048Sha256;
+const DEFAULT_CNF_CANONICALIZATION_BODY: CanonicalizationType = CanonicalizationType::Relaxed;
+const DEFAULT_CNF_CANONICALIZATION_HEADER: CanonicalizationType = CanonicalizationType::Relaxed;
+const DEFAULT_CNF_CRYPTOPERIOD: u64 = 15552000;
+const DEFAULT_CNF_EXPIRATION: u64 = 1296000;
+const DEFAULT_CNF_HEADERS: &str = "from:reply-to:subject:date:to:cc";
+const DEFAULT_CNF_HEADERS_OPT: &str = "resent-date:resent-from:resent-to:resent-cc:in-reply-to:references:list-id:list-help:list-unsubscribe:list-subscribe:list-post:list-owner:list-archive";
+const DEFAULT_CNF_KEY_DB: &str = "key-db.sqlite3";
+const DEFAULT_CNF_REVOCATION: u64 = 1728000;
+const DEFAULT_LIB_DIR: &str = "/var/lib/opensmtpd-filter-dkimout";
 const DEFAULT_MSG_SIZE: usize = 1024 * 1024;
 const LOG_LEVEL_ENV_VAR: &str = "OPENSMTPD_FILTER_DKIMOUT_LOG_LEVEL";
 

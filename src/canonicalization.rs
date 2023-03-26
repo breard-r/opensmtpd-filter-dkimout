@@ -6,12 +6,6 @@ pub enum CanonicalizationType {
 	Simple,
 }
 
-impl Default for CanonicalizationType {
-	fn default() -> Self {
-		Self::Relaxed
-	}
-}
-
 impl ToString for CanonicalizationType {
 	fn to_string(&self) -> String {
 		match self {
@@ -33,7 +27,7 @@ impl FromStr for CanonicalizationType {
 	}
 }
 
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Debug)]
 pub struct Canonicalization {
 	header_alg: CanonicalizationType,
 	body_alg: CanonicalizationType,
@@ -61,6 +55,15 @@ impl Canonicalization {
 		match self.body_alg {
 			CanonicalizationType::Relaxed => body_relaxed(body),
 			CanonicalizationType::Simple => body_simple(body),
+		}
+	}
+}
+
+impl Default for Canonicalization {
+	fn default() -> Self {
+		Self {
+			header_alg: crate::DEFAULT_CNF_CANONICALIZATION_HEADER,
+			body_alg: crate::DEFAULT_CNF_CANONICALIZATION_BODY,
 		}
 	}
 }

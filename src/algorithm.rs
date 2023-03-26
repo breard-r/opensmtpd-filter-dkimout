@@ -21,7 +21,7 @@ impl Algorithm {
 
 impl Default for Algorithm {
 	fn default() -> Self {
-		Self::Rsa2048Sha256
+		crate::DEFAULT_CNF_ALGORITHM
 	}
 }
 
