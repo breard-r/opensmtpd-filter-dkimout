@@ -13,6 +13,8 @@ use std::collections::HashMap;
 use stdin_reader::StdinReader;
 
 const DEFAULT_BUFF_SIZE: usize = 1024;
+const DEFAULT_HEADERS: &str = "from:reply-to:subject:date:to:cc";
+const DEFAULT_HEADERS_OPT: &str = "resent-date:resent-from:resent-to:resent-cc:in-reply-to:references:list-id:list-help:list-unsubscribe:list-subscribe:list-post:list-owner:list-archive";
 const DEFAULT_MSG_SIZE: usize = 1024 * 1024;
 const LOG_LEVEL_ENV_VAR: &str = "OPENSMTPD_FILTER_DKIMOUT_LOG_LEVEL";
 

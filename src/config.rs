@@ -18,6 +18,10 @@ pub struct Config {
 	domain: Vec<String>,
 	#[arg(short = 'D', long, value_name = "FILE")]
 	domain_file: Option<PathBuf>,
+	#[arg(short, long)]
+	header: Vec<String>,
+	#[arg(short = 'o', long)]
+	header_optional: Vec<String>,
 	#[arg(short, long, value_name = "FILE")]
 	revocation_list: Option<PathBuf>,
 	#[arg(short = 'x', long, default_value_t = 1296000)]
@@ -27,6 +31,8 @@ pub struct Config {
 impl Config {
 	pub fn init() -> Result<Self, String> {
 		let mut cnf = Self::parse();
+
+		// domains
 		let mut domain_set: HashSet<String> = cnf.domain.into_iter().collect();
 		if let Some(path) = &cnf.domain_file {
 			let f = File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
@@ -39,6 +45,11 @@ impl Config {
 			}
 		}
 		cnf.domain = domain_set.into_iter().collect::<Vec<_>>();
+
+		// headers
+		cnf.header = process_headers(&cnf.header, crate::DEFAULT_HEADERS);
+		cnf.header_optional = process_headers(&cnf.header_optional, crate::DEFAULT_HEADERS_OPT);
+
 		Ok(cnf)
 	}
 
@@ -61,4 +72,34 @@ impl Config {
 			None
 		}
 	}
+
+	pub fn headers(&self) -> &[String] {
+		&self.header
+	}
+
+	pub fn headers_optional(&self) -> &[String] {
+		&self.header_optional
+	}
+}
+
+fn process_headers(lst: &[String], default: &str) -> Vec<String> {
+	let ret = if lst.is_empty() {
+		let default_lst = vec![default.to_string()];
+		do_process_headers(&default_lst)
+	} else {
+		do_process_headers(lst)
+	};
+	ret.into_iter().collect::<Vec<_>>()
+}
+
+fn do_process_headers(lst: &[String]) -> HashSet<String> {
+	let mut ret = HashSet::with_capacity(128);
+	for input in lst {
+		for h in input.split(':') {
+			ret.insert(h.to_string().to_lowercase());
+		}
+		//let mut input_headers: Vec<String> = input.split(':').map(|e| e.to_string()).collect();
+		//ret.append(&mut input_headers);
+	}
+	ret
 }
