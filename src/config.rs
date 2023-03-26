@@ -1,3 +1,4 @@
+use crate::canonicalization::Canonicalization;
 use clap::Parser;
 use std::collections::HashSet;
 use std::fs::File;
@@ -8,6 +9,8 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Config {
+	#[arg(short, long, default_value_t = Canonicalization::default())]
+	canonicalization: Canonicalization,
 	#[arg(short, long)]
 	domain: Vec<String>,
 	#[arg(short = 'D', long, value_name = "FILE")]
@@ -32,6 +35,10 @@ impl Config {
 		}
 		cnf.domain = domain_set.into_iter().collect::<Vec<_>>();
 		Ok(cnf)
+	}
+
+	pub fn canonicalization(&self) -> Canonicalization {
+		self.canonicalization
 	}
 
 	pub fn domains(&self) -> &[String] {

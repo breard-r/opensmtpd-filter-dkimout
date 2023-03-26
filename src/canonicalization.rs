@@ -1,3 +1,6 @@
+use std::str::FromStr;
+
+#[derive(Clone, Copy, Debug)]
 pub enum CanonicalizationType {
 	Relaxed,
 	Simple,
@@ -9,7 +12,28 @@ impl Default for CanonicalizationType {
 	}
 }
 
-#[derive(Default)]
+impl ToString for CanonicalizationType {
+	fn to_string(&self) -> String {
+		match self {
+			CanonicalizationType::Relaxed => String::from("relaxed"),
+			CanonicalizationType::Simple => String::from("simple"),
+		}
+	}
+}
+
+impl FromStr for CanonicalizationType {
+	type Err = String;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		match s.to_lowercase().as_str() {
+			"relaxed" => Ok(CanonicalizationType::Relaxed),
+			"simple" => Ok(CanonicalizationType::Simple),
+			_ => Err(format!("{s}: invalid canonicalization type")),
+		}
+	}
+}
+
+#[derive(Clone, Copy, Debug, Default)]
 pub struct Canonicalization {
 	header_alg: CanonicalizationType,
 	body_alg: CanonicalizationType,
@@ -38,6 +62,31 @@ impl Canonicalization {
 			CanonicalizationType::Relaxed => body_relaxed(body),
 			CanonicalizationType::Simple => body_simple(body),
 		}
+	}
+}
+
+impl ToString for Canonicalization {
+	fn to_string(&self) -> String {
+		format!(
+			"{}/{}",
+			self.header_alg.to_string(),
+			self.body_alg.to_string()
+		)
+	}
+}
+
+impl FromStr for Canonicalization {
+	type Err = String;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		let elems: Vec<&str> = s.split('/').collect();
+		if elems.len() != 2 {
+			return Err(format!("{s}: invalid canonicalization"));
+		}
+		Ok(Self {
+			header_alg: elems[0].parse()?,
+			body_alg: elems[1].parse()?,
+		})
 	}
 }
 
