@@ -25,6 +25,8 @@ pub struct Config {
 	revocation_list: Option<PathBuf>,
 	#[arg(short = 'x', long, default_value_t = 1296000)]
 	expiration: u64,
+	#[arg(short, long, action = clap::ArgAction::Count)]
+	verbose: u8,
 }
 
 impl Config {
@@ -62,6 +64,10 @@ impl Config {
 
 	pub fn headers_optional(&self) -> &[String] {
 		&self.header_optional
+	}
+
+	pub fn verbosity(&self) -> log::LevelFilter {
+		crate::logs::log_level(self.verbose)
 	}
 }
 

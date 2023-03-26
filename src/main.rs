@@ -46,13 +46,13 @@ macro_rules! log_messages {
 }
 
 fn main() {
-	logs::init_log_system();
 	match config::Config::init() {
 		Ok(cnf) => {
+			logs::init_log_system(&cnf);
 			log::debug!("{cnf:?}");
 			main_loop(&cnf)
 		}
-		Err(e) => log::error!("{e}"),
+		Err(e) => eprintln!("{e}"),
 	}
 }
 
