@@ -30,10 +30,10 @@ pub struct Config {
 	revocation: u64,
 	#[arg(short = 'u', long)]
 	dns_update_cmd: String,
-	#[arg(short = 'x', long, default_value_t = 1296000)]
-	expiration: u64,
 	#[arg(short, long, action = clap::ArgAction::Count)]
 	verbose: u8,
+	#[arg(short = 'x', long, default_value_t = 1296000)]
+	expiration: u64,
 }
 
 impl Config {
@@ -53,24 +53,8 @@ impl Config {
 		self.canonicalization
 	}
 
-	pub fn cryptoperiod(&self) -> NonZeroU64 {
-		self.cryptoperiod
-	}
-
-	pub fn dns_update_cmd(&self) -> &str {
-		&self.dns_update_cmd
-	}
-
 	pub fn domains(&self) -> &[String] {
 		&self.domain
-	}
-
-	pub fn expiration(&self) -> Option<u64> {
-		if self.expiration != 0 {
-			Some(self.expiration)
-		} else {
-			None
-		}
 	}
 
 	pub fn headers(&self) -> &[String] {
@@ -81,12 +65,28 @@ impl Config {
 		&self.header_optional
 	}
 
+	pub fn cryptoperiod(&self) -> NonZeroU64 {
+		self.cryptoperiod
+	}
+
 	pub fn revocation(&self) -> u64 {
 		self.revocation
 	}
 
+	pub fn dns_update_cmd(&self) -> &str {
+		&self.dns_update_cmd
+	}
+
 	pub fn verbosity(&self) -> log::LevelFilter {
 		crate::logs::log_level(self.verbose)
+	}
+
+	pub fn expiration(&self) -> Option<u64> {
+		if self.expiration != 0 {
+			Some(self.expiration)
+		} else {
+			None
+		}
 	}
 }
 
