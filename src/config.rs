@@ -20,6 +20,8 @@ pub struct Config {
 	domain_file: Option<PathBuf>,
 	#[arg(short, long, value_name = "FILE")]
 	revocation_list: Option<PathBuf>,
+	#[arg(short = 'x', long, default_value_t = 1296000)]
+	expiration: u64,
 }
 
 impl Config {
@@ -50,5 +52,13 @@ impl Config {
 
 	pub fn domains(&self) -> &[String] {
 		&self.domain
+	}
+
+	pub fn expiration(&self) -> Option<u64> {
+		if self.expiration != 0 {
+			Some(self.expiration)
+		} else {
+			None
+		}
 	}
 }
