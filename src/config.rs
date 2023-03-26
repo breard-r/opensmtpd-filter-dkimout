@@ -3,7 +3,6 @@ use crate::canonicalization::Canonicalization;
 use clap::Parser;
 use std::collections::HashSet;
 use std::fs::File;
-//use std::io::BufReader;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 
@@ -31,25 +30,9 @@ pub struct Config {
 impl Config {
 	pub fn init() -> Result<Self, String> {
 		let mut cnf = Self::parse();
-
-		// domains
-		let mut domain_set: HashSet<String> = cnf.domain.into_iter().collect();
-		if let Some(path) = &cnf.domain_file {
-			let f = File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
-			for line in BufReader::new(f).lines() {
-				let line = line.map_err(|e| format!("{}: {e}", path.display()))?;
-				let domain = line.trim();
-				if !domain.is_empty() && !domain.starts_with('#') {
-					domain_set.insert(domain.to_string());
-				}
-			}
-		}
-		cnf.domain = domain_set.into_iter().collect::<Vec<_>>();
-
-		// headers
+		cnf.domain = process_domains(&cnf.domain, &cnf.domain_file)?;
 		cnf.header = process_headers(&cnf.header, crate::DEFAULT_HEADERS);
 		cnf.header_optional = process_headers(&cnf.header_optional, crate::DEFAULT_HEADERS_OPT);
-
 		Ok(cnf)
 	}
 
@@ -82,6 +65,21 @@ impl Config {
 	}
 }
 
+fn process_domains(lst: &[String], domain_file: &Option<PathBuf>) -> Result<Vec<String>, String> {
+	let mut domain_set: HashSet<String> = lst.iter().map(|e| e.to_string()).collect();
+	if let Some(path) = domain_file {
+		let f = File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
+		for line in BufReader::new(f).lines() {
+			let line = line.map_err(|e| format!("{}: {e}", path.display()))?;
+			let domain = line.trim();
+			if !domain.is_empty() && !domain.starts_with('#') {
+				domain_set.insert(domain.to_string().to_lowercase());
+			}
+		}
+	}
+	Ok(domain_set.into_iter().collect::<Vec<_>>())
+}
+
 fn process_headers(lst: &[String], default: &str) -> Vec<String> {
 	let ret = if lst.is_empty() {
 		let default_lst = vec![default.to_string()];
@@ -98,8 +96,6 @@ fn do_process_headers(lst: &[String]) -> HashSet<String> {
 		for h in input.split(':') {
 			ret.insert(h.to_string().to_lowercase());
 		}
-		//let mut input_headers: Vec<String> = input.split(':').map(|e| e.to_string()).collect();
-		//ret.append(&mut input_headers);
 	}
 	ret
 }
