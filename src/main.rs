@@ -1,3 +1,4 @@
+mod algorithm;
 mod canonicalization;
 mod config;
 mod entry;

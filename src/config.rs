@@ -1,3 +1,4 @@
+use crate::algorithm::Algorithm;
 use crate::canonicalization::Canonicalization;
 use clap::Parser;
 use std::collections::HashSet;
@@ -9,6 +10,8 @@ use std::path::PathBuf;
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 pub struct Config {
+	#[arg(short, long, default_value_t = Algorithm::default())]
+	algorithm: Algorithm,
 	#[arg(short, long, default_value_t = Canonicalization::default())]
 	canonicalization: Canonicalization,
 	#[arg(short, long)]
@@ -35,6 +38,10 @@ impl Config {
 		}
 		cnf.domain = domain_set.into_iter().collect::<Vec<_>>();
 		Ok(cnf)
+	}
+
+	pub fn algorithm(&self) -> Algorithm {
+		self.algorithm
 	}
 
 	pub fn canonicalization(&self) -> Canonicalization {
