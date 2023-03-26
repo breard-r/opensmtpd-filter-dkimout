@@ -8,6 +8,17 @@ pub enum Algorithm {
 	Rsa4096Sha256,
 }
 
+impl Algorithm {
+	pub fn display(&self) -> String {
+		match self {
+			Self::Ed25519Sha256 => String::from("ed25519-sha256"),
+			Self::Rsa2048Sha256 | Self::Rsa3072Sha256 | Self::Rsa4096Sha256 => {
+				String::from("rsa-sha256")
+			}
+		}
+	}
+}
+
 impl Default for Algorithm {
 	fn default() -> Self {
 		Self::Rsa2048Sha256
