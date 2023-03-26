@@ -26,6 +26,8 @@ pub struct Config {
 	header_optional: Vec<String>,
 	#[arg(short = 'p', long, default_value_t = NonZeroU64::new(15552000).unwrap())]
 	cryptoperiod: NonZeroU64,
+	#[arg(short, long, default_value_t = 1728000)]
+	revocation: u64,
 	#[arg(short = 'x', long, default_value_t = 1296000)]
 	expiration: u64,
 	#[arg(short, long, action = clap::ArgAction::Count)]
@@ -71,6 +73,10 @@ impl Config {
 
 	pub fn headers_optional(&self) -> &[String] {
 		&self.header_optional
+	}
+
+	pub fn revocation(&self) -> u64 {
+		self.revocation
 	}
 
 	pub fn verbosity(&self) -> log::LevelFilter {
