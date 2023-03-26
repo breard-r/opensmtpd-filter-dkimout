@@ -10,7 +10,7 @@ pub enum Algorithm {
 
 impl Default for Algorithm {
 	fn default() -> Self {
-		Self::Ed25519Sha256
+		Self::Rsa2048Sha256
 	}
 }
 
