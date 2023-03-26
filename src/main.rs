@@ -1,4 +1,5 @@
 mod canonicalization;
+mod config;
 mod entry;
 mod handshake;
 mod logs;
@@ -43,6 +44,16 @@ macro_rules! log_messages {
 
 fn main() {
 	logs::init_log_system();
+	match config::Config::init() {
+		Ok(cnf) => {
+			log::debug!("{cnf:?}");
+			main_loop(&cnf)
+		}
+		Err(e) => log::error!("{e}"),
+	}
+}
+
+fn main_loop(cnf: &config::Config) {
 	let mut reader = StdinReader::new();
 	let mut messages: HashMap<String, Message> = HashMap::new();
 	handshake::read_config(&mut reader);
@@ -59,7 +70,7 @@ fn main() {
 							msg.append_line(entry.get_data());
 						} else {
 							log::debug!("message ready: {msg_id}");
-							msg.sign_and_return();
+							msg.sign_and_return(&cnf);
 							messages.remove(&msg_id);
 							log::debug!("message removed: {msg_id}");
 						}
@@ -71,7 +82,7 @@ fn main() {
 							messages.insert(msg_id, msg);
 						} else {
 							log::debug!("empty new message: {msg_id}");
-							msg.sign_and_return();
+							msg.sign_and_return(&cnf);
 						}
 					}
 				}

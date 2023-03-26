@@ -1,3 +1,4 @@
+use crate::config::Config;
 use crate::entry::Entry;
 use mailparse::parse_mail;
 use std::io::{BufWriter, Write};
@@ -50,7 +51,7 @@ impl Message {
 		self.nb_lines
 	}
 
-	pub fn sign_and_return(&self) {
+	pub fn sign_and_return(&self, cnf: &Config) {
 		log::trace!("content:\n{}", crate::display_bytes!(&self.content));
 		match parse_mail(&self.content) {
 			Ok(parsed_msg) => {
