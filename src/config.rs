@@ -18,14 +18,14 @@ pub struct Config {
 	domain: Vec<String>,
 	#[arg(short = 'D', long, value_name = "FILE")]
 	domain_file: Option<PathBuf>,
+	#[arg(short = 'f', long, value_name = "FILE")]
+	revocation_list: Option<PathBuf>,
 	#[arg(short, long)]
 	header: Vec<String>,
 	#[arg(short = 'o', long)]
 	header_optional: Vec<String>,
 	#[arg(short = 'p', long, default_value_t = NonZeroU64::new(15552000).unwrap())]
 	cryptoperiod: NonZeroU64,
-	#[arg(short, long, value_name = "FILE")]
-	revocation_list: Option<PathBuf>,
 	#[arg(short = 'x', long, default_value_t = 1296000)]
 	expiration: u64,
 	#[arg(short, long, action = clap::ArgAction::Count)]
