@@ -5,7 +5,7 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::num::NonZeroU64;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -55,6 +55,13 @@ impl Config {
 
 	pub fn domains(&self) -> &[String] {
 		&self.domain
+	}
+
+	pub fn revocation_list(&self) -> Option<&Path> {
+		match &self.revocation_list {
+			Some(p) => Some(p),
+			None => None,
+		}
 	}
 
 	pub fn headers(&self) -> &[String] {
