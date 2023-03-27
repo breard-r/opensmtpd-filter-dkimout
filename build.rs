@@ -1,9 +1,13 @@
 use std::env;
 
-const DEFAULT_VARLIBDIR: &str = "/var/lib/";
+const VARLIBDIR_NAME: &str = "VARLIBDIR";
+const VARLIBDIR_VALUE_DEFAULT: &str = "/var/lib/";
 
 fn main() {
-	if let Err(_) = env::var("VARLIBDIR") {
-		println!("cargo:rustc-env={}={}", "VARLIBDIR", DEFAULT_VARLIBDIR);
+	if env::var(VARLIBDIR_NAME).is_err() {
+		println!(
+			"cargo:rustc-env={}={}",
+			VARLIBDIR_NAME, VARLIBDIR_VALUE_DEFAULT
+		);
 	}
 }
