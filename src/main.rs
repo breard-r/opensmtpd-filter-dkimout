@@ -5,6 +5,7 @@ mod entry;
 mod handshake;
 mod logs;
 mod message;
+mod parsed_message;
 mod stdin_reader;
 
 use algorithm::Algorithm;

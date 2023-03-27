@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::entry::Entry;
-use mailparse::parse_mail;
+use crate::parsed_message::ParsedMessage;
 use std::io::{BufWriter, Write};
 
 pub const RETURN_SEP: &[u8] = b"|";
@@ -52,35 +52,35 @@ impl Message {
 	}
 
 	pub fn sign_and_return(&self, cnf: &Config) {
-		log::trace!("content:\n{}", crate::display_bytes!(&self.content));
-		match parse_mail(&self.content) {
+		log::trace!("content: {}", crate::display_bytes!(&self.content));
+		match ParsedMessage::from_bytes(&self.content) {
 			Ok(parsed_msg) => {
 				log::trace!("mail parsed");
-				for h in parsed_msg.get_headers() {
-					log::trace!("{:?}", h);
+				for h in &parsed_msg.headers {
+					log::trace!(
+						"ParsedMessage: header: raw: {}",
+						crate::display_bytes!(h.raw)
+					);
+					log::trace!(
+						"ParsedMessage: header: name: {}",
+						crate::display_bytes!(h.name)
+					);
+					log::trace!(
+						"ParsedMessage: header: value: {}",
+						crate::display_bytes!(h.value)
+					);
 				}
-				match self.get_body() {
-					Some(body) => {
-						log::trace!("MailBody:\n{}", crate::display_bytes!(body));
-						// TODO: sign the message using DKIM
-					}
-					None => {
-						log::error!("{}: unable to find the body", self.session_id);
-					}
-				}
+				log::trace!(
+					"ParsedMessage: body: {}",
+					crate::display_bytes!(parsed_msg.body)
+				);
+				// TODO: sign the message using DKIM
 			}
-			Err(e) => {
-				log::error!("{}: unable to parse message: {e}", self.session_id);
+			Err(_) => {
+				log::error!("{}: unable to parse message", self.session_id);
 			}
-		};
-		self.print_msg();
-	}
-
-	fn get_body(&self) -> Option<&[u8]> {
-		match self.content.windows(4).position(|w| w == b"\r\n\r\n") {
-			Some(body_index) => Some(&self.content[body_index + 4..]),
-			None => None,
 		}
+		self.print_msg();
 	}
 
 	fn print_msg(&self) {
