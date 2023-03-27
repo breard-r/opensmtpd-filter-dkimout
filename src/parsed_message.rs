@@ -33,8 +33,8 @@ fn header_end_pos(data: &[u8]) -> Result<usize, ()> {
 			.windows(2)
 			.position(|w| w == b"\r\n")
 			.ok_or(())? + 2;
-		if ret == max_len {
-			return Ok(ret);
+		if ret >= max_len {
+			return Ok(max_len);
 		}
 		if !is_wsp(data[ret]) {
 			return Ok(ret);
