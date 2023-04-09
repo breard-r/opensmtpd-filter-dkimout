@@ -51,3 +51,13 @@ Matthew Green wrote an excellent article on this subject: [Ok Google: please pub
 ### Where is the documentation?
 
 A man page will be available by the time this filter is ready to use.
+
+### One of my keys has been compromised, how do I revoke it?
+
+Keys are stored in an SQLite format 3 database. You may access it using the `sqlite3` CLI tool or any other compatible tool.
+
+The simplest way to revoke a key is to set its `not_after` field at the current timestamp. A new key will automatically be generated.
+
+```
+UPDATE key_db SET not_after = unixepoch() WHERE selector = 'dkim-755512d8f51b4da6936d565a1ddbaf17';
+```
