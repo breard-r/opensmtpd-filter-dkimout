@@ -105,9 +105,6 @@ async fn main_loop(cnf: &config::Config, db: &SqlitePool) {
 				ActionResult::MessageSent(msg_id) => {
 					log::debug!("message removed: {msg_id}");
 				}
-				ActionResult::MessageSentError(err) => {
-					log::error!("{err}");
-				}
 				ActionResult::NewEntry(entry) => {
 					let msg_id = entry.get_msg_id();
 					match messages.get_mut(&msg_id) {

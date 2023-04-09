@@ -1,4 +1,3 @@
-use crate::action::ActionResult;
 use crate::stdin_reader::StdinReader;
 use nom::bytes::streaming::{tag, take_till, take_while1};
 use nom::IResult;
@@ -39,7 +38,7 @@ impl Entry {
 	}
 }
 
-pub async fn read_entry(reader_lock: Arc<RwLock<StdinReader>>) -> ActionResult {
+pub async fn read_entry(reader_lock: Arc<RwLock<StdinReader>>) -> Option<Result<Entry, String>> {
 	let mut reader = reader_lock.write().await;
 	log::trace!("reader lock on stdin locked");
 	let line_res = reader.read_line().await;
@@ -47,10 +46,10 @@ pub async fn read_entry(reader_lock: Arc<RwLock<StdinReader>>) -> ActionResult {
 	log::trace!("reader lock on stdin released");
 	match line_res {
 		Some(line) => match Entry::from_bytes(&line) {
-			Ok(entry) => ActionResult::NewEntry(entry),
-			Err(err) => ActionResult::NewEntryError(err),
+			Ok(entry) => Some(Ok(entry)),
+			Err(err) => Some(Err(err)),
 		},
-		None => ActionResult::EndOfStream,
+		None => None,
 	}
 }
 

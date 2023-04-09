@@ -17,18 +17,26 @@ pub enum ActionResult {
 	EndOfStream,
 	KeyRotation,
 	MessageSent(String),
-	MessageSentError(String),
 	NewEntry(crate::entry::Entry),
 	NewEntryError(String),
 }
 
 pub async fn new_action(action: Action<'_>) -> ActionResult {
 	match action {
-		Action::ReadLine(reader_lock) => read_entry(reader_lock).await,
+		Action::ReadLine(reader_lock) => match read_entry(reader_lock).await {
+			Some(r) => match r {
+				Ok(entry) => ActionResult::NewEntry(entry),
+				Err(err) => ActionResult::NewEntryError(err),
+			},
+			None => ActionResult::EndOfStream,
+		},
 		Action::RotateKeys((db, cnf)) => {
 			key_rotation(db, cnf).await;
 			ActionResult::KeyRotation
 		}
-		Action::SendMessage((msg, cnf)) => msg.sign_and_return(cnf).await,
+		Action::SendMessage((msg, cnf)) => {
+			let msg_id = msg.sign_and_return(cnf).await;
+			ActionResult::MessageSent(msg_id)
+		}
 	}
 }
