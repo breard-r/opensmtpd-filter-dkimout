@@ -55,7 +55,7 @@ async fn renew_key_if_expired(
 	algorithm: Algorithm,
 	expiration: Duration,
 ) -> Result<Duration, ()> {
-	let res: Option<(OffsetDateTime,)> = sqlx::query_as(SELECT_LATEST_KEY)
+	let res: Option<(i64,)> = sqlx::query_as(SELECT_LATEST_KEY)
 		.bind(domain)
 		.bind(algorithm.to_string())
 		.fetch_optional(db)
@@ -63,6 +63,7 @@ async fn renew_key_if_expired(
 		.map_err(|_| ())?;
 	match res {
 		Some((not_after,)) => {
+			let not_after = OffsetDateTime::from_unix_timestamp(not_after).map_err(|_| ())?;
 			log::debug!("{domain}: key is valid until {not_after}");
 			if not_after - expiration <= OffsetDateTime::now_utc() {
 				generate_key(db, cnf, domain, algorithm).await?;
@@ -91,9 +92,9 @@ async fn generate_key(
 		.bind(selector)
 		.bind(domain)
 		.bind(algorithm.to_string())
-		.bind(now)
-		.bind(not_after)
-		.bind(revocation)
+		.bind(now.unix_timestamp())
+		.bind(not_after.unix_timestamp())
+		.bind(revocation.unix_timestamp())
 		.bind(priv_key)
 		.bind(pub_key)
 		.execute(db)
