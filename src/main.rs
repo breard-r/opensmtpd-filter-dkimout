@@ -1,3 +1,4 @@
+mod action;
 mod algorithm;
 mod canonicalization;
 mod config;
@@ -8,12 +9,16 @@ mod message;
 mod parsed_message;
 mod stdin_reader;
 
+use action::{new_action, ActionResult};
 use algorithm::Algorithm;
 use canonicalization::CanonicalizationType;
-use entry::Entry;
+use futures::stream::FuturesUnordered;
+use futures::StreamExt;
 use message::Message;
 use std::collections::HashMap;
+use std::sync::Arc;
 use stdin_reader::StdinReader;
+use tokio::sync::RwLock;
 
 const DEFAULT_BUFF_SIZE: usize = 1024;
 const DEFAULT_CNF_ALGORITHM: Algorithm = Algorithm::Rsa2048Sha256;
@@ -70,43 +75,61 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 async fn main_loop(cnf: &config::Config) {
+	let mut actions = FuturesUnordered::new();
 	let mut reader = StdinReader::new();
 	let mut messages: HashMap<String, Message> = HashMap::new();
 	handshake::read_config(&mut reader).await;
 	handshake::register_filter();
 	log_messages!(messages);
+	let reader_lock = Arc::new(RwLock::new(reader));
+	actions.push(new_action(Some(reader_lock.clone()), None));
 	loop {
-		match Entry::from_bytes(&reader.read_line().await) {
-			Ok(entry) => {
-				let msg_id = entry.get_msg_id();
-				match messages.get_mut(&msg_id) {
-					Some(msg) => {
-						if !entry.is_end_of_message() {
-							log::debug!("new line in message: {msg_id}");
-							msg.append_line(entry.get_data());
-						} else {
-							log::debug!("message ready: {msg_id}");
-							msg.sign_and_return(cnf).await;
-							messages.remove(&msg_id);
-							log::debug!("message removed: {msg_id}");
+		if actions.is_empty() {
+			break;
+		}
+		if let Some(action_res) = actions.next().await {
+			match action_res {
+				ActionResult::EndOfStream => {
+					log::debug!("end of input stream");
+				}
+				ActionResult::MessageSent(msg_id) => {
+					log::debug!("message removed: {msg_id}");
+				}
+				ActionResult::MessageSentError(err) => {
+					log::error!("{err}");
+				}
+				ActionResult::NewEntry(entry) => {
+					let msg_id = entry.get_msg_id();
+					match messages.get_mut(&msg_id) {
+						Some(msg) => {
+							if !entry.is_end_of_message() {
+								log::debug!("new line in message: {msg_id}");
+								msg.append_line(entry.get_data());
+							} else {
+								log::debug!("message ready: {msg_id}");
+								if let Some(m) = messages.remove(&msg_id) {
+									actions.push(new_action(None, Some((m, cnf))));
+								}
+							}
 						}
-					}
-					None => {
-						let msg = Message::from_entry(&entry);
-						if !entry.is_end_of_message() {
+						None => {
+							let msg = Message::from_entry(&entry);
 							log::debug!("new message: {msg_id}");
-							messages.insert(msg_id, msg);
-						} else {
-							log::debug!("empty new message: {msg_id}");
-							msg.sign_and_return(cnf).await;
+							if !entry.is_end_of_message() {
+								messages.insert(msg_id.clone(), msg);
+							} else {
+								actions.push(new_action(None, Some((msg, cnf))));
+							}
 						}
 					}
+					log_messages!(messages);
+					actions.push(new_action(Some(reader_lock.clone()), None));
+				}
+				ActionResult::NewEntryError(err) => {
+					log::error!("invalid filter line: {err}");
+					actions.push(new_action(Some(reader_lock.clone()), None));
 				}
 			}
-			Err(err) => {
-				log::error!("invalid filter line: {err}");
-			}
 		}
-		log_messages!(messages);
 	}
 }

@@ -1,3 +1,4 @@
+use crate::action::ActionResult;
 use crate::config::Config;
 use crate::entry::Entry;
 use crate::parsed_message::ParsedMessage;
@@ -51,7 +52,7 @@ impl Message {
 		self.nb_lines
 	}
 
-	pub async fn sign_and_return(&self, cnf: &Config) {
+	pub async fn sign_and_return(&self, cnf: &Config) -> ActionResult {
 		log::trace!("content: {}", crate::display_bytes!(&self.content));
 		match ParsedMessage::from_bytes(&self.content) {
 			Ok(parsed_msg) => {
@@ -81,6 +82,7 @@ impl Message {
 			}
 		}
 		self.print_msg().await;
+		ActionResult::MessageSent(get_msg_id(&self.session_id, &self.token))
 	}
 
 	async fn print_msg(&self) {
@@ -102,4 +104,8 @@ impl Message {
 		stdout.write_all(b"\n").await.unwrap();
 		stdout.flush().await.unwrap();
 	}
+}
+
+pub fn get_msg_id(session_id: &str, token: &str) -> String {
+	format!("{session_id}.{token}")
 }

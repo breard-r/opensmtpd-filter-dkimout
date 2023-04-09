@@ -6,13 +6,20 @@ pub const CONFIG_TAG: &[u8] = b"config|";
 
 pub async fn read_config(reader: &mut StdinReader) {
 	loop {
-		let line = reader.read_line().await;
-		if line == CONFIG_END {
-			log::trace!("configuration is ready");
-			return;
-		}
-		if !line.starts_with(CONFIG_TAG) {
-			log::warn!("invalid config line: {}", display_bytes!(line));
+		match reader.read_line().await {
+			Some(line) => {
+				if line == CONFIG_END {
+					log::trace!("configuration is ready");
+					return;
+				}
+				if !line.starts_with(CONFIG_TAG) {
+					log::warn!("invalid config line: {}", display_bytes!(line));
+				}
+			}
+			None => {
+				log::debug!("end of input stream");
+				std::process::exit(0);
+			}
 		}
 	}
 }

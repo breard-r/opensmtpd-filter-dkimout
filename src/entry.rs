@@ -1,5 +1,9 @@
+use crate::action::ActionResult;
+use crate::stdin_reader::StdinReader;
 use nom::bytes::streaming::{tag, take_till, take_while1};
 use nom::IResult;
+use std::sync::Arc;
+use tokio::sync::RwLock;
 
 #[derive(Debug)]
 pub struct Entry {
@@ -10,7 +14,7 @@ pub struct Entry {
 
 impl Entry {
 	pub fn get_msg_id(&self) -> String {
-		format!("{}.{}", self.session_id, self.token)
+		crate::message::get_msg_id(&self.session_id, &self.token)
 	}
 
 	pub fn get_session_id(&self) -> &str {
@@ -29,9 +33,24 @@ impl Entry {
 		self.data == vec![b'.']
 	}
 
-	pub fn from_bytes(input: &[u8]) -> Result<Entry, String> {
+	fn from_bytes(input: &[u8]) -> Result<Entry, String> {
 		let (_, entry) = parse_entry(input).map_err(|e| format!("parsing error: {e}"))?;
 		Ok(entry)
+	}
+}
+
+pub async fn read_entry(reader_lock: Arc<RwLock<StdinReader>>) -> ActionResult {
+	let mut reader = reader_lock.write().await;
+	log::trace!("reader lock on stdin locked");
+	let line_res = reader.read_line().await;
+	drop(reader);
+	log::trace!("reader lock on stdin released");
+	match line_res {
+		Some(line) => match Entry::from_bytes(&line) {
+			Ok(entry) => ActionResult::NewEntry(entry),
+			Err(err) => ActionResult::NewEntryError(err),
+		},
+		None => ActionResult::EndOfStream,
 	}
 }
 

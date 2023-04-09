@@ -14,7 +14,7 @@ impl StdinReader {
 		}
 	}
 
-	pub async fn read_line(&mut self) -> Vec<u8> {
+	pub async fn read_line(&mut self) -> Option<Vec<u8>> {
 		self.buffer.clear();
 		log::trace!("reading line from stdin");
 		if self
@@ -23,9 +23,9 @@ impl StdinReader {
 			.await
 			.unwrap() == 0
 		{
-			std::process::exit(0)
+			return None;
 		}
 		log::trace!("line read from stdin: {}", display_bytes!(self.buffer));
-		self.buffer.clone()
+		Some(self.buffer.clone())
 	}
 }
