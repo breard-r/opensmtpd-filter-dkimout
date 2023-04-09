@@ -2,8 +2,10 @@ mod action;
 mod algorithm;
 mod canonicalization;
 mod config;
+mod db;
 mod entry;
 mod handshake;
+mod key;
 mod logs;
 mod message;
 mod parsed_message;
@@ -15,6 +17,7 @@ use canonicalization::CanonicalizationType;
 use futures::stream::FuturesUnordered;
 use futures::StreamExt;
 use message::Message;
+use sqlx::SqlitePool;
 use std::collections::HashMap;
 use std::sync::Arc;
 use stdin_reader::StdinReader;
@@ -67,14 +70,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 		Ok(cnf) => {
 			logs::init_log_system(&cnf);
 			log::debug!("{cnf:?}");
-			main_loop(&cnf).await
+			match db::init(&cnf).await {
+				Ok(pool) => main_loop(&cnf, &pool).await,
+				Err(e) => eprintln!("{e}"),
+			}
 		}
 		Err(e) => eprintln!("{e}"),
 	}
 	Ok(())
 }
 
-async fn main_loop(cnf: &config::Config) {
+async fn main_loop(cnf: &config::Config, db: &SqlitePool) {
 	let mut actions = FuturesUnordered::new();
 	let mut reader = StdinReader::new();
 	let mut messages: HashMap<String, Message> = HashMap::new();
@@ -82,15 +88,20 @@ async fn main_loop(cnf: &config::Config) {
 	handshake::register_filter();
 	log_messages!(messages);
 	let reader_lock = Arc::new(RwLock::new(reader));
-	actions.push(new_action(Some(reader_lock.clone()), None));
+	actions.push(new_action(Some(reader_lock.clone()), None, None));
+	actions.push(new_action(None, Some((db, cnf)), None));
 	loop {
-		if actions.is_empty() {
+		log::debug!("Wat???? {}", actions.len());
+		if actions.len() <= 1 {
 			break;
 		}
 		if let Some(action_res) = actions.next().await {
 			match action_res {
 				ActionResult::EndOfStream => {
 					log::debug!("end of input stream");
+				}
+				ActionResult::KeyRotation => {
+					actions.push(new_action(None, Some((db, cnf)), None));
 				}
 				ActionResult::MessageSent(msg_id) => {
 					log::debug!("message removed: {msg_id}");
@@ -108,7 +119,7 @@ async fn main_loop(cnf: &config::Config) {
 							} else {
 								log::debug!("message ready: {msg_id}");
 								if let Some(m) = messages.remove(&msg_id) {
-									actions.push(new_action(None, Some((m, cnf))));
+									actions.push(new_action(None, Some((db, cnf)), Some(m)));
 								}
 							}
 						}
@@ -118,16 +129,16 @@ async fn main_loop(cnf: &config::Config) {
 							if !entry.is_end_of_message() {
 								messages.insert(msg_id.clone(), msg);
 							} else {
-								actions.push(new_action(None, Some((msg, cnf))));
+								actions.push(new_action(None, Some((db, cnf)), Some(msg)));
 							}
 						}
 					}
 					log_messages!(messages);
-					actions.push(new_action(Some(reader_lock.clone()), None));
+					actions.push(new_action(Some(reader_lock.clone()), None, None));
 				}
 				ActionResult::NewEntryError(err) => {
 					log::error!("invalid filter line: {err}");
-					actions.push(new_action(Some(reader_lock.clone()), None));
+					actions.push(new_action(Some(reader_lock.clone()), None, None));
 				}
 			}
 		}
