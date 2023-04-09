@@ -85,10 +85,7 @@ async fn main_loop(cnf: &config::Config, db: &SqlitePool) {
 	let mut actions = FuturesUnordered::new();
 	let mut reader = StdinReader::new();
 	let mut messages: HashMap<String, Message> = HashMap::new();
-	tokio::join!(
-		handshake::read_config(&mut reader),
-		key_rotation(db, cnf),
-	);
+	tokio::join!(handshake::read_config(&mut reader), key_rotation(db, cnf));
 	handshake::register_filter();
 	log_messages!(messages);
 	let reader_lock = Arc::new(RwLock::new(reader));
