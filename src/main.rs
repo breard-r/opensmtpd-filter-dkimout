@@ -16,6 +16,7 @@ use algorithm::Algorithm;
 use canonicalization::CanonicalizationType;
 use futures::stream::FuturesUnordered;
 use futures::StreamExt;
+use key::key_rotation;
 use message::Message;
 use sqlx::SqlitePool;
 use std::collections::HashMap;
@@ -84,7 +85,10 @@ async fn main_loop(cnf: &config::Config, db: &SqlitePool) {
 	let mut actions = FuturesUnordered::new();
 	let mut reader = StdinReader::new();
 	let mut messages: HashMap<String, Message> = HashMap::new();
-	handshake::read_config(&mut reader).await;
+	tokio::join!(
+		handshake::read_config(&mut reader),
+		key_rotation(db, cnf),
+	);
 	handshake::register_filter();
 	log_messages!(messages);
 	let reader_lock = Arc::new(RwLock::new(reader));
