@@ -1,6 +1,5 @@
 use base64::{engine::general_purpose, Engine as _};
-use ed25519_dalek::{SigningKey, VerifyingKey};
-use rand::prelude::ThreadRng;
+use ed25519_dalek::SigningKey;
 use rand::thread_rng;
 use rsa::pkcs8::{EncodePrivateKey, EncodePublicKey};
 use rsa::{RsaPrivateKey, RsaPublicKey};
