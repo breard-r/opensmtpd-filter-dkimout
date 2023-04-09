@@ -1,3 +1,9 @@
+use base64::{engine::general_purpose, Engine as _};
+use ed25519_dalek::{SigningKey, VerifyingKey};
+use rand::prelude::ThreadRng;
+use rand::thread_rng;
+use rsa::pkcs8::{EncodePrivateKey, EncodePublicKey};
+use rsa::{RsaPrivateKey, RsaPublicKey};
 use std::str::FromStr;
 
 #[derive(Clone, Copy, Debug)]
@@ -15,6 +21,22 @@ impl Algorithm {
 			Self::Rsa2048Sha256 | Self::Rsa3072Sha256 | Self::Rsa4096Sha256 => {
 				String::from("rsa-sha256")
 			}
+		}
+	}
+
+	pub fn gen_keys(&self) -> (String, String) {
+		match self {
+			Self::Ed25519Sha256 => gen_ed25519_kp(),
+			Self::Rsa2048Sha256 => gen_rsa_kp(2048),
+			Self::Rsa3072Sha256 => gen_rsa_kp(3072),
+			Self::Rsa4096Sha256 => gen_rsa_kp(4096),
+		}
+	}
+
+	pub fn sign(&self, encoded_pk: &str, data: &[u8]) -> String {
+		match self {
+			Self::Ed25519Sha256 => String::new(),
+			Self::Rsa2048Sha256 | Self::Rsa3072Sha256 | Self::Rsa4096Sha256 => String::new(),
 		}
 	}
 }
@@ -47,5 +69,39 @@ impl FromStr for Algorithm {
 			"rsa4096-sha256" => Ok(Self::Rsa4096Sha256),
 			_ => Err(format!("{s}: invalid signing algorithm")),
 		}
+	}
+}
+
+fn gen_ed25519_kp() -> (String, String) {
+	let mut csprng = thread_rng();
+	let priv_key = SigningKey::generate(&mut csprng);
+	let pub_key = priv_key.verifying_key();
+	let priv_key = general_purpose::STANDARD.encode(priv_key.to_bytes());
+	let pub_key = general_purpose::STANDARD.encode(pub_key.to_bytes());
+	(priv_key, pub_key)
+}
+
+fn gen_rsa_kp(bits: usize) -> (String, String) {
+	let mut csprng = thread_rng();
+	loop {
+		if let Ok(priv_key) = RsaPrivateKey::new(&mut csprng, bits) {
+			let pub_key = RsaPublicKey::from(&priv_key);
+			let priv_key = match priv_key.to_pkcs8_der() {
+				Ok(d) => d,
+				Err(_) => {
+					continue;
+				}
+			};
+			let pub_key = match pub_key.to_public_key_der() {
+				Ok(d) => d,
+				Err(_) => {
+					continue;
+				}
+			};
+			let priv_key = general_purpose::STANDARD.encode(priv_key.as_bytes());
+			let pub_key = general_purpose::STANDARD.encode(pub_key.as_bytes());
+			return (priv_key, pub_key);
+		}
+		log::trace!("failed to generate an RSA-{bits} key");
 	}
 }

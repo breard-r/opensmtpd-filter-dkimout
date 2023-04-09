@@ -6,6 +6,7 @@ use crate::stdin_reader::StdinReader;
 use sqlx::SqlitePool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tokio::time::sleep;
 
 pub enum Action<'a> {
 	ReadLine(Arc<RwLock<StdinReader>>),
@@ -31,7 +32,8 @@ pub async fn new_action(action: Action<'_>) -> ActionResult {
 			None => ActionResult::EndOfStream,
 		},
 		Action::RotateKeys((db, cnf)) => {
-			key_rotation(db, cnf).await;
+			let duration = key_rotation(db, cnf).await;
+			sleep(duration).await;
 			ActionResult::KeyRotation
 		}
 		Action::SendMessage((msg, cnf)) => {
