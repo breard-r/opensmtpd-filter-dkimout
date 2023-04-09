@@ -86,7 +86,7 @@ async fn main_loop(cnf: &config::Config) {
 							msg.append_line(entry.get_data());
 						} else {
 							log::debug!("message ready: {msg_id}");
-							msg.sign_and_return(&cnf).await;
+							msg.sign_and_return(cnf).await;
 							messages.remove(&msg_id);
 							log::debug!("message removed: {msg_id}");
 						}
@@ -98,7 +98,7 @@ async fn main_loop(cnf: &config::Config) {
 							messages.insert(msg_id, msg);
 						} else {
 							log::debug!("empty new message: {msg_id}");
-							msg.sign_and_return(&cnf).await;
+							msg.sign_and_return(cnf).await;
 						}
 					}
 				}
