@@ -11,7 +11,7 @@ mod message;
 mod parsed_message;
 mod stdin_reader;
 
-use action::{new_action, ActionResult};
+use action::{new_action, Action, ActionResult};
 use algorithm::Algorithm;
 use canonicalization::CanonicalizationType;
 use futures::stream::FuturesUnordered;
@@ -88,10 +88,9 @@ async fn main_loop(cnf: &config::Config, db: &SqlitePool) {
 	handshake::register_filter();
 	log_messages!(messages);
 	let reader_lock = Arc::new(RwLock::new(reader));
-	actions.push(new_action(Some(reader_lock.clone()), None, None));
-	actions.push(new_action(None, Some((db, cnf)), None));
+	actions.push(new_action(Action::ReadLine(reader_lock.clone())));
+	actions.push(new_action(Action::RotateKeys((db, cnf))));
 	loop {
-		log::debug!("Wat???? {}", actions.len());
 		if actions.len() <= 1 {
 			break;
 		}
@@ -101,7 +100,7 @@ async fn main_loop(cnf: &config::Config, db: &SqlitePool) {
 					log::debug!("end of input stream");
 				}
 				ActionResult::KeyRotation => {
-					actions.push(new_action(None, Some((db, cnf)), None));
+					actions.push(new_action(Action::RotateKeys((db, cnf))));
 				}
 				ActionResult::MessageSent(msg_id) => {
 					log::debug!("message removed: {msg_id}");
@@ -119,7 +118,7 @@ async fn main_loop(cnf: &config::Config, db: &SqlitePool) {
 							} else {
 								log::debug!("message ready: {msg_id}");
 								if let Some(m) = messages.remove(&msg_id) {
-									actions.push(new_action(None, Some((db, cnf)), Some(m)));
+									actions.push(new_action(Action::SendMessage((m, cnf))));
 								}
 							}
 						}
@@ -129,16 +128,16 @@ async fn main_loop(cnf: &config::Config, db: &SqlitePool) {
 							if !entry.is_end_of_message() {
 								messages.insert(msg_id.clone(), msg);
 							} else {
-								actions.push(new_action(None, Some((db, cnf)), Some(msg)));
+								actions.push(new_action(Action::SendMessage((msg, cnf))));
 							}
 						}
 					}
 					log_messages!(messages);
-					actions.push(new_action(Some(reader_lock.clone()), None, None));
+					actions.push(new_action(Action::ReadLine(reader_lock.clone())));
 				}
 				ActionResult::NewEntryError(err) => {
 					log::error!("invalid filter line: {err}");
-					actions.push(new_action(Some(reader_lock.clone()), None, None));
+					actions.push(new_action(Action::ReadLine(reader_lock.clone())));
 				}
 			}
 		}

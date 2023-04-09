@@ -7,6 +7,12 @@ use sqlx::SqlitePool;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+pub enum Action<'a> {
+	ReadLine(Arc<RwLock<StdinReader>>),
+	RotateKeys((&'a SqlitePool, &'a Config)),
+	SendMessage((Message, &'a Config)),
+}
+
 pub enum ActionResult {
 	EndOfStream,
 	KeyRotation,
@@ -16,24 +22,13 @@ pub enum ActionResult {
 	NewEntryError(String),
 }
 
-pub async fn new_action(
-	reader_lock: Option<Arc<RwLock<StdinReader>>>,
-	db_opt: Option<(&SqlitePool, &Config)>,
-	msg_tpl: Option<Message>,
-) -> ActionResult {
-	if let Some(reader_lock) = reader_lock {
-		return read_entry(reader_lock).await;
-	}
-	if let Some((db, cnf)) = db_opt {
-		match msg_tpl {
-			Some(msg) => {
-				return msg.sign_and_return(cnf).await;
-			}
-			None => {
-				key_rotation(db, cnf).await;
-				return ActionResult::KeyRotation;
-			}
+pub async fn new_action(action: Action<'_>) -> ActionResult {
+	match action {
+		Action::ReadLine(reader_lock) => read_entry(reader_lock).await,
+		Action::RotateKeys((db, cnf)) => {
+			key_rotation(db, cnf).await;
+			ActionResult::KeyRotation
 		}
+		Action::SendMessage((msg, cnf)) => msg.sign_and_return(cnf).await,
 	}
-	ActionResult::MessageSentError("new_action: invalid parameters".to_string())
 }
