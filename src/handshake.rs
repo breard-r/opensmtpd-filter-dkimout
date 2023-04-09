@@ -4,9 +4,9 @@ use crate::stdin_reader::StdinReader;
 pub const CONFIG_END: &[u8] = b"config|ready\n";
 pub const CONFIG_TAG: &[u8] = b"config|";
 
-pub fn read_config(reader: &mut StdinReader) {
+pub async fn read_config(reader: &mut StdinReader) {
 	loop {
-		let line = reader.read_line();
+		let line = reader.read_line().await;
 		if line == CONFIG_END {
 			log::trace!("configuration is ready");
 			return;

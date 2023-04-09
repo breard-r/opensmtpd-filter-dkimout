@@ -56,25 +56,27 @@ macro_rules! log_messages {
 	};
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
 	match config::Config::init() {
 		Ok(cnf) => {
 			logs::init_log_system(&cnf);
 			log::debug!("{cnf:?}");
-			main_loop(&cnf)
+			main_loop(&cnf).await
 		}
 		Err(e) => eprintln!("{e}"),
 	}
+	Ok(())
 }
 
-fn main_loop(cnf: &config::Config) {
+async fn main_loop(cnf: &config::Config) {
 	let mut reader = StdinReader::new();
 	let mut messages: HashMap<String, Message> = HashMap::new();
-	handshake::read_config(&mut reader);
+	handshake::read_config(&mut reader).await;
 	handshake::register_filter();
 	log_messages!(messages);
 	loop {
-		match Entry::from_bytes(&reader.read_line()) {
+		match Entry::from_bytes(&reader.read_line().await) {
 			Ok(entry) => {
 				let msg_id = entry.get_msg_id();
 				match messages.get_mut(&msg_id) {
@@ -84,7 +86,7 @@ fn main_loop(cnf: &config::Config) {
 							msg.append_line(entry.get_data());
 						} else {
 							log::debug!("message ready: {msg_id}");
-							msg.sign_and_return(&cnf);
+							msg.sign_and_return(&cnf).await;
 							messages.remove(&msg_id);
 							log::debug!("message removed: {msg_id}");
 						}
@@ -96,7 +98,7 @@ fn main_loop(cnf: &config::Config) {
 							messages.insert(msg_id, msg);
 						} else {
 							log::debug!("empty new message: {msg_id}");
-							msg.sign_and_return(&cnf);
+							msg.sign_and_return(&cnf).await;
 						}
 					}
 				}

@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::entry::Entry;
 use crate::parsed_message::ParsedMessage;
-use std::io::{BufWriter, Write};
+use tokio::io::{AsyncWriteExt, BufWriter};
 
 pub const RETURN_SEP: &[u8] = b"|";
 pub const RETURN_START: &[u8] = b"filter-dataline|";
@@ -51,7 +51,7 @@ impl Message {
 		self.nb_lines
 	}
 
-	pub fn sign_and_return(&self, cnf: &Config) {
+	pub async fn sign_and_return(&self, cnf: &Config) {
 		log::trace!("content: {}", crate::display_bytes!(&self.content));
 		match ParsedMessage::from_bytes(&self.content) {
 			Ok(parsed_msg) => {
@@ -80,25 +80,26 @@ impl Message {
 				log::error!("{}: unable to parse message", self.session_id);
 			}
 		}
-		self.print_msg();
+		self.print_msg().await;
 	}
 
-	fn print_msg(&self) {
+	async fn print_msg(&self) {
 		let i = self.content.len() - 1;
 		for line in self.content[0..i].split(|&b| b == b'\n') {
-			self.print_line(line);
+			self.print_line(line).await;
 		}
-		self.print_line(b".");
+		self.print_line(b".").await;
 	}
 
-	fn print_line(&self, line: &[u8]) {
-		let mut stdout = BufWriter::new(std::io::stdout());
-		stdout.write_all(RETURN_START).unwrap();
-		stdout.write_all(self.session_id.as_bytes()).unwrap();
-		stdout.write_all(RETURN_SEP).unwrap();
-		stdout.write_all(self.token.as_bytes()).unwrap();
-		stdout.write_all(RETURN_SEP).unwrap();
-		stdout.write_all(line).unwrap();
-		stdout.write_all(b"\n").unwrap();
+	async fn print_line(&self, line: &[u8]) {
+		let mut stdout = BufWriter::new(tokio::io::stdout());
+		stdout.write_all(RETURN_START).await.unwrap();
+		stdout.write_all(self.session_id.as_bytes()).await.unwrap();
+		stdout.write_all(RETURN_SEP).await.unwrap();
+		stdout.write_all(self.token.as_bytes()).await.unwrap();
+		stdout.write_all(RETURN_SEP).await.unwrap();
+		stdout.write_all(line).await.unwrap();
+		stdout.write_all(b"\n").await.unwrap();
+		stdout.flush().await.unwrap();
 	}
 }
