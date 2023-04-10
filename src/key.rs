@@ -5,36 +5,6 @@ use sqlx::SqlitePool;
 use tokio::time::Duration;
 use uuid::Uuid;
 
-const INSERT_KEY: &str = "INSERT INTO key_db (
-	selector,
-	sdid,
-	algorithm,
-	creation,
-	not_after,
-	revocation,
-	published,
-	private_key,
-	public_key
-) VALUES (
-	$1,
-	$2,
-	$3,
-	$4,
-	$5,
-	$6,
-	FALSE,
-	$7,
-	$8
-)";
-const SELECT_LATEST_KEY: &str = "SELECT not_after
-FROM key_db
-WHERE
-	sdid = $1
-	AND algorithm = $2
-	AND published IS FALSE
-ORDER BY not_after DESC
-LIMIT 1";
-
 pub async fn key_rotation(db: &SqlitePool, cnf: &Config) -> Duration {
 	let mut durations = Vec::with_capacity(cnf.domains().len());
 	let expiration = cnf
@@ -58,7 +28,7 @@ async fn renew_key_if_expired(
 	algorithm: Algorithm,
 	expiration: Duration,
 ) -> Result<Duration, ()> {
-	let res: Option<(i64,)> = sqlx::query_as(SELECT_LATEST_KEY)
+	let res: Option<(i64,)> = sqlx::query_as(crate::db::SELECT_LATEST_KEY)
 		.bind(domain)
 		.bind(algorithm.to_string())
 		.fetch_optional(db)
@@ -91,7 +61,7 @@ async fn generate_key(
 	let not_after = now + Duration::from_secs(cnf.cryptoperiod().get());
 	let revocation = not_after + Duration::from_secs(cnf.revocation());
 	let (priv_key, pub_key) = algorithm.gen_keys();
-	sqlx::query(INSERT_KEY)
+	sqlx::query(crate::db::INSERT_KEY)
 		.bind(selector)
 		.bind(domain)
 		.bind(algorithm.to_string())
