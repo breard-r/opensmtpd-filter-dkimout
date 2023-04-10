@@ -12,6 +12,7 @@ const INSERT_KEY: &str = "INSERT INTO key_db (
 	creation,
 	not_after,
 	revocation,
+	published,
 	private_key,
 	public_key
 ) VALUES (
@@ -21,6 +22,7 @@ const INSERT_KEY: &str = "INSERT INTO key_db (
 	$4,
 	$5,
 	$6,
+	FALSE,
 	$7,
 	$8
 )";
@@ -29,6 +31,7 @@ FROM key_db
 WHERE
 	sdid = $1
 	AND algorithm = $2
+	AND published IS FALSE
 ORDER BY not_after DESC
 LIMIT 1";
 
