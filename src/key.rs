@@ -2,6 +2,9 @@ use crate::config::Config;
 use crate::Algorithm;
 use sqlx::types::time::OffsetDateTime;
 use sqlx::SqlitePool;
+use std::path::Path;
+use tokio::fs::OpenOptions;
+use tokio::io::{AsyncWriteExt, BufWriter};
 use tokio::time::Duration;
 use uuid::Uuid;
 
@@ -16,9 +19,65 @@ pub async fn key_rotation(db: &SqlitePool, cnf: &Config) -> Duration {
 			durations.push(d);
 		}
 	}
+	if let Some(path) = cnf.revocation_list() {
+		match publish_expired_keys(db, path).await {
+			Ok(d) => durations.push(d),
+			Err(err) => log::error!("{err}"),
+		};
+	}
 	durations.push(Duration::from_secs(crate::KEY_CHECK_MIN_DELAY));
 	durations.sort();
 	durations[durations.len() - 1]
+}
+
+async fn publish_expired_keys(db: &SqlitePool, file_path: &Path) -> Result<Duration, String> {
+	let res: Vec<(String, String, String, String)> = sqlx::query_as(crate::db::SELECT_EXPIRED_KEYS)
+		.fetch_all(db)
+		.await
+		.map_err(|e| e.to_string())?;
+	if !res.is_empty() {
+		let rev_file = OpenOptions::new()
+			.write(true)
+			.create(true)
+			.append(true)
+			.open(file_path)
+			.await
+			.map_err(|e| e.to_string())?;
+		let mut buff = BufWriter::new(rev_file);
+		for (selector, sdid, algorithm, private_key) in res {
+			buff.write_all(algorithm.as_bytes()).await.unwrap();
+			buff.write_all(b" ").await.unwrap();
+			buff.write_all(private_key.as_bytes()).await.unwrap();
+			buff.write_all(b" ").await.unwrap();
+			buff.write_all(selector.as_bytes()).await.unwrap();
+			buff.write_all(b"._domainkey.").await.unwrap();
+			buff.write_all(sdid.as_bytes()).await.unwrap();
+			buff.write_all(b"\n").await.unwrap();
+			buff.flush().await.unwrap();
+			sqlx::query(crate::db::UPDATE_PUBLISHED_KEY)
+				.bind(&selector)
+				.bind(&sdid)
+				.bind(&algorithm)
+				.execute(db)
+				.await
+				.map_err(|e| e.to_string())?;
+			log::info!(
+				"{algorithm} private key for {selector}._domainkey.{sdid} has been published"
+			);
+		}
+	}
+	let res: Option<(i64,)> = sqlx::query_as(crate::db::SELECT_NEAREST_KEY_PUBLICATION)
+		.fetch_optional(db)
+		.await
+		.map_err(|e| e.to_string())?;
+	match res {
+		Some((next_pub_ts,)) => {
+			let now_ts = OffsetDateTime::now_utc().unix_timestamp();
+			let delta = 0.max(next_pub_ts - now_ts);
+			Ok(Duration::from_secs(delta as u64))
+		}
+		None => Ok(Duration::from_secs(crate::KEY_CHECK_MIN_DELAY)),
+	}
 }
 
 async fn renew_key_if_expired(
