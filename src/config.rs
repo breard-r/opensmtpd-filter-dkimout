@@ -1,5 +1,6 @@
 use crate::algorithm::Algorithm;
 use crate::canonicalization::Canonicalization;
+use anyhow::{anyhow, Result};
 use clap::Parser;
 use std::collections::HashSet;
 use std::fs::File;
@@ -39,7 +40,7 @@ pub struct Config {
 }
 
 impl Config {
-	pub fn init() -> Result<Self, String> {
+	pub fn init() -> Result<Self> {
 		let mut cnf = Self::parse();
 		cnf.key_data_base = process_key_data_base(cnf.key_data_base);
 		cnf.domain = process_domains(&cnf.domain, &cnf.domain_file)?;
@@ -116,12 +117,12 @@ fn process_key_data_base(opt: Option<PathBuf>) -> Option<PathBuf> {
 	}
 }
 
-fn process_domains(lst: &[String], domain_file: &Option<PathBuf>) -> Result<Vec<String>, String> {
+fn process_domains(lst: &[String], domain_file: &Option<PathBuf>) -> Result<Vec<String>> {
 	let mut domain_set: HashSet<String> = lst.iter().map(|e| e.to_string()).collect();
 	if let Some(path) = domain_file {
-		let f = File::open(path).map_err(|e| format!("{}: {e}", path.display()))?;
+		let f = File::open(path).map_err(|e| anyhow!("{}: {e}", path.display()))?;
 		for line in BufReader::new(f).lines() {
-			let line = line.map_err(|e| format!("{}: {e}", path.display()))?;
+			let line = line.map_err(|e| anyhow!("{}: {e}", path.display()))?;
 			let domain = line.trim();
 			if !domain.is_empty() && !domain.starts_with('#') {
 				domain_set.insert(domain.to_string().to_lowercase());

@@ -77,8 +77,8 @@ impl Message {
 				);
 				// TODO: sign the message using DKIM
 			}
-			Err(_) => {
-				log::error!("{}: unable to parse message", self.session_id);
+			Err(err) => {
+				log::error!("{msg_id}: unable to parse message: {err}");
 			}
 		}
 		if let Err(err) = self.print_msg().await {

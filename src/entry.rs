@@ -1,4 +1,5 @@
 use crate::stdin_reader::StdinReader;
+use anyhow::{anyhow, Result};
 use nom::bytes::streaming::{tag, take_till, take_while1};
 use nom::IResult;
 use std::sync::Arc;
@@ -32,13 +33,13 @@ impl Entry {
 		self.data == vec![b'.']
 	}
 
-	fn from_bytes(input: &[u8]) -> Result<Entry, String> {
-		let (_, entry) = parse_entry(input).map_err(|e| format!("parsing error: {e}"))?;
+	fn from_bytes(input: &[u8]) -> Result<Entry> {
+		let (_, entry) = parse_entry(input).map_err(|e| anyhow!("parsing error: {e}"))?;
 		Ok(entry)
 	}
 }
 
-pub async fn read_entry(reader_lock: Arc<RwLock<StdinReader>>) -> Option<Result<Entry, String>> {
+pub async fn read_entry(reader_lock: Arc<RwLock<StdinReader>>) -> Option<Result<Entry>> {
 	let mut reader = reader_lock.write().await;
 	log::trace!("reader lock on stdin locked");
 	let line_res = reader.read_line().await;
