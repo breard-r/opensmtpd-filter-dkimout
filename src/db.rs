@@ -1,4 +1,5 @@
 use crate::config::Config;
+use anyhow::Result;
 use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::{ConnectOptions, SqlitePool};
 
@@ -49,11 +50,7 @@ WHERE
 	AND sdid = $2
 	AND algorithm = $3";
 
-pub async fn init(cnf: &Config) -> Result<SqlitePool, String> {
-	do_init(cnf).await.map_err(|e| e.to_string())
-}
-
-async fn do_init(cnf: &Config) -> Result<SqlitePool, sqlx::Error> {
+pub async fn init(cnf: &Config) -> Result<SqlitePool> {
 	let mut db_options = SqliteConnectOptions::new()
 		.filename(cnf.key_data_base())
 		.create_if_missing(true);

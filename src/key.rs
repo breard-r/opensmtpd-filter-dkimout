@@ -1,5 +1,6 @@
 use crate::config::Config;
 use crate::Algorithm;
+use anyhow::Result;
 use sqlx::types::time::OffsetDateTime;
 use sqlx::SqlitePool;
 use std::path::Path;
@@ -30,37 +31,34 @@ pub async fn key_rotation(db: &SqlitePool, cnf: &Config) -> Duration {
 	durations[durations.len() - 1]
 }
 
-async fn publish_expired_keys(db: &SqlitePool, file_path: &Path) -> Result<Duration, String> {
+async fn publish_expired_keys(db: &SqlitePool, file_path: &Path) -> Result<Duration> {
 	let res: Vec<(String, String, String, String)> = sqlx::query_as(crate::db::SELECT_EXPIRED_KEYS)
 		.fetch_all(db)
-		.await
-		.map_err(|e| e.to_string())?;
+		.await?;
 	if !res.is_empty() {
 		let rev_file = OpenOptions::new()
 			.write(true)
 			.create(true)
 			.append(true)
 			.open(file_path)
-			.await
-			.map_err(|e| e.to_string())?;
+			.await?;
 		let mut buff = BufWriter::new(rev_file);
 		for (selector, sdid, algorithm, private_key) in res {
-			buff.write_all(algorithm.as_bytes()).await.unwrap();
-			buff.write_all(b" ").await.unwrap();
-			buff.write_all(private_key.as_bytes()).await.unwrap();
-			buff.write_all(b" ").await.unwrap();
-			buff.write_all(selector.as_bytes()).await.unwrap();
-			buff.write_all(b"._domainkey.").await.unwrap();
-			buff.write_all(sdid.as_bytes()).await.unwrap();
-			buff.write_all(b"\n").await.unwrap();
-			buff.flush().await.unwrap();
+			buff.write_all(algorithm.as_bytes()).await?;
+			buff.write_all(b" ").await?;
+			buff.write_all(private_key.as_bytes()).await?;
+			buff.write_all(b" ").await?;
+			buff.write_all(selector.as_bytes()).await?;
+			buff.write_all(b"._domainkey.").await?;
+			buff.write_all(sdid.as_bytes()).await?;
+			buff.write_all(b"\n").await?;
+			buff.flush().await?;
 			sqlx::query(crate::db::UPDATE_PUBLISHED_KEY)
 				.bind(&selector)
 				.bind(&sdid)
 				.bind(&algorithm)
 				.execute(db)
-				.await
-				.map_err(|e| e.to_string())?;
+				.await?;
 			log::info!(
 				"{algorithm} private key for {selector}._domainkey.{sdid} has been published"
 			);
@@ -68,8 +66,7 @@ async fn publish_expired_keys(db: &SqlitePool, file_path: &Path) -> Result<Durat
 	}
 	let res: Option<(i64,)> = sqlx::query_as(crate::db::SELECT_NEAREST_KEY_PUBLICATION)
 		.fetch_optional(db)
-		.await
-		.map_err(|e| e.to_string())?;
+		.await?;
 	match res {
 		Some((next_pub_ts,)) => {
 			let now_ts = OffsetDateTime::now_utc().unix_timestamp();
@@ -86,16 +83,15 @@ async fn renew_key_if_expired(
 	domain: &str,
 	algorithm: Algorithm,
 	expiration: Duration,
-) -> Result<Duration, ()> {
+) -> Result<Duration> {
 	let res: Option<(i64,)> = sqlx::query_as(crate::db::SELECT_LATEST_KEY)
 		.bind(domain)
 		.bind(algorithm.to_string())
 		.fetch_optional(db)
-		.await
-		.map_err(|_| ())?;
+		.await?;
 	match res {
 		Some((not_after,)) => {
-			let not_after = OffsetDateTime::from_unix_timestamp(not_after).map_err(|_| ())?;
+			let not_after = OffsetDateTime::from_unix_timestamp(not_after)?;
 			log::debug!("{domain}: key is valid until {not_after}");
 			if not_after - expiration <= OffsetDateTime::now_utc() {
 				generate_key(db, cnf, domain, algorithm).await?;
@@ -114,7 +110,7 @@ async fn generate_key(
 	cnf: &Config,
 	domain: &str,
 	algorithm: Algorithm,
-) -> Result<(), ()> {
+) -> Result<()> {
 	let selector = format!("dkim-{}", Uuid::new_v4().simple());
 	let now = OffsetDateTime::now_utc();
 	let not_after = now + Duration::from_secs(cnf.cryptoperiod().get());
@@ -130,8 +126,7 @@ async fn generate_key(
 		.bind(priv_key)
 		.bind(pub_key)
 		.execute(db)
-		.await
-		.map_err(|_| ())?;
+		.await?;
 	// TODO: dns_update_cmd
 	log::debug!("{domain}: new {} key generated", algorithm.to_string());
 	Ok(())

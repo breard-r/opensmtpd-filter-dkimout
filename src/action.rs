@@ -27,7 +27,7 @@ pub async fn new_action(action: Action<'_>) -> ActionResult {
 		Action::ReadLine(reader_lock) => match read_entry(reader_lock).await {
 			Some(r) => match r {
 				Ok(entry) => ActionResult::NewEntry(entry),
-				Err(err) => ActionResult::NewEntryError(err),
+				Err(err) => ActionResult::NewEntryError(err.to_string()),
 			},
 			None => ActionResult::EndOfStream,
 		},

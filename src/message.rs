@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::entry::Entry;
 use crate::parsed_message::ParsedMessage;
+use anyhow::Result;
 use tokio::io::{AsyncWriteExt, BufWriter};
 
 pub const RETURN_SEP: &[u8] = b"|";
@@ -80,28 +81,32 @@ impl Message {
 				log::error!("{}: unable to parse message", self.session_id);
 			}
 		}
-		self.print_msg().await;
+		if let Err(err) = self.print_msg().await {
+			log::error!("unable to write message: {err}");
+		}
 		get_msg_id(&self.session_id, &self.token)
 	}
 
-	async fn print_msg(&self) {
+	async fn print_msg(&self) -> Result<()> {
 		let i = self.content.len() - 1;
 		for line in self.content[0..i].split(|&b| b == b'\n') {
-			self.print_line(line).await;
+			self.print_line(line).await?;
 		}
-		self.print_line(b".").await;
+		self.print_line(b".").await?;
+		Ok(())
 	}
 
-	async fn print_line(&self, line: &[u8]) {
+	async fn print_line(&self, line: &[u8]) -> Result<()> {
 		let mut stdout = BufWriter::new(tokio::io::stdout());
-		stdout.write_all(RETURN_START).await.unwrap();
-		stdout.write_all(self.session_id.as_bytes()).await.unwrap();
-		stdout.write_all(RETURN_SEP).await.unwrap();
-		stdout.write_all(self.token.as_bytes()).await.unwrap();
-		stdout.write_all(RETURN_SEP).await.unwrap();
-		stdout.write_all(line).await.unwrap();
-		stdout.write_all(b"\n").await.unwrap();
-		stdout.flush().await.unwrap();
+		stdout.write_all(RETURN_START).await?;
+		stdout.write_all(self.session_id.as_bytes()).await?;
+		stdout.write_all(RETURN_SEP).await?;
+		stdout.write_all(self.token.as_bytes()).await?;
+		stdout.write_all(RETURN_SEP).await?;
+		stdout.write_all(line).await?;
+		stdout.write_all(b"\n").await?;
+		stdout.flush().await?;
+		Ok(())
 	}
 }
 

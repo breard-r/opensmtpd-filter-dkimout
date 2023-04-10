@@ -44,13 +44,7 @@ pub async fn read_entry(reader_lock: Arc<RwLock<StdinReader>>) -> Option<Result<
 	let line_res = reader.read_line().await;
 	drop(reader);
 	log::trace!("reader lock on stdin released");
-	match line_res {
-		Some(line) => match Entry::from_bytes(&line) {
-			Ok(entry) => Some(Ok(entry)),
-			Err(err) => Some(Err(err)),
-		},
-		None => None,
-	}
+	line_res.map(|line| Entry::from_bytes(&line))
 }
 
 fn is_eol(c: u8) -> bool {
