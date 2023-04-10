@@ -5,10 +5,11 @@ config|admd|localhost.localdomain
 config|ready
 filter|0.6|1679685611.545169|smtp-in|data-line|b6004c087262f6d4|ca08b19d70c81a8b|Received: from example.com (localhost.localdomain [::1])
 filter|0.6|1679685611.545184|smtp-in|data-line|b6004c087262f6d4|ca08b19d70c81a8b|	by localhost.localdomain (OpenSMTPD) with SMTP id 8b29bb25
-filter|0.6|1679685611.545186|smtp-in|data-line|b6004c087262f6d4|ca08b19d70c81a8b|	for <derp.derpson@localhost>;
+filter|0.6|1679685611.545186|smtp-in|data-line|b6004c087262f6d4|ca08b19d70c81a8b|	for <derp.derpson@example.org>;
 filter|0.6|1679685611.545200|smtp-in|data-line|b6004c087262f6d4|ca08b19d70c81a8b|	Fri, 24 Mar 2023 19:20:11 +0000 (UTC)
-filter|0.6|1679685617.258766|smtp-in|data-line|b6004c087262f6d4|ca08b19d70c81a8b|From: Derp Sender <derp.sender@localhost>
+filter|0.6|1679685617.258766|smtp-in|data-line|b6004c087262f6d4|ca08b19d70c81a8b|From: Derp Sender <derp.sender@example.org>
 filter|0.6|1679685627.765325|smtp-in|data-line|b6004c087262f6d4|ca08b19d70c81a8b|To: derp.derpson@localhost
+filter|0.6|1679685627.765542|smtp-in|data-line|b6004c087262f6d4|ca08b19d70c81a8b|Resent-Date: Fri, 24 Mar 2023 09:42:21 +0100
 filter|0.6|1679685627.765973|smtp-in|data-line|b6004c087262f6d4|ca08b19d70c81a8b|Subject: This is a test
 filter|0.6|1679685627.766188|smtp-in|data-line|b6004c087262f6d4|ca08b19d70c81a8b|MIME-Version: 1.0
 filter|0.6|1679685627.766200|smtp-in|data-line|b6004c087262f6d4|ca08b19d70c81a8b|Content-Transfer-Encoding: 8bit
