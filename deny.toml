@@ -113,7 +113,6 @@ unlicensed = "deny"
 allow = [
     "MIT",
     "Apache-2.0",
-    "0BSD",
     "BSD-3-Clause",
     "Unicode-DFS-2016",
 ]
