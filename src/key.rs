@@ -46,9 +46,9 @@ pub async fn key_rotation(db: &SqlitePool, cnf: &Config) -> Duration {
 			durations.push(d);
 		}
 	}
+	durations.push(Duration::from_secs(crate::KEY_CHECK_MIN_DELAY));
 	durations.sort();
-	durations.reverse();
-	durations.pop().unwrap_or(Duration::from_secs(3600))
+	durations[durations.len() - 1]
 }
 
 async fn renew_key_if_expired(

@@ -36,6 +36,7 @@ const DEFAULT_CNF_KEY_DB: &str = "key-db.sqlite3";
 const DEFAULT_CNF_REVOCATION: u64 = 1728000;
 const DEFAULT_LIB_DIR: &str = env!("VARLIBDIR");
 const DEFAULT_MSG_SIZE: usize = 1024 * 1024;
+const KEY_CHECK_MIN_DELAY: u64 = 60 * 60 * 3;
 const LOG_LEVEL_ENV_VAR: &str = "OPENSMTPD_FILTER_DKIMOUT_LOG_LEVEL";
 
 #[macro_export]
