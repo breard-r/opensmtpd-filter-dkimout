@@ -34,16 +34,6 @@ pub struct Canonicalization {
 }
 
 impl Canonicalization {
-	pub fn set_header_alg(mut self, alg: CanonicalizationType) -> Self {
-		self.header_alg = alg;
-		self
-	}
-
-	pub fn set_body_alg(mut self, alg: CanonicalizationType) -> Self {
-		self.body_alg = alg;
-		self
-	}
-
 	pub fn process_header(&self, header: &[u8]) -> Vec<u8> {
 		match self.header_alg {
 			CanonicalizationType::Relaxed => header_relaxed(header),
