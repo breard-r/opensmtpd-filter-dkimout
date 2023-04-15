@@ -47,6 +47,18 @@ impl Canonicalization {
 			CanonicalizationType::Simple => body_simple(body),
 		}
 	}
+
+	#[cfg(test)]
+	pub fn set_header_alg(mut self, alg: CanonicalizationType) -> Self {
+		self.header_alg = alg;
+		self
+	}
+
+	#[cfg(test)]
+	pub fn set_body_alg(mut self, alg: CanonicalizationType) -> Self {
+		self.body_alg = alg;
+		self
+	}
 }
 
 impl Default for Canonicalization {
