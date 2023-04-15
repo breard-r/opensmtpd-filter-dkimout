@@ -9,6 +9,7 @@ mod key;
 mod logs;
 mod message;
 mod parsed_message;
+mod signature;
 mod stdin_reader;
 
 use action::{new_action, Action, ActionResult};
@@ -38,6 +39,8 @@ const DEFAULT_LIB_DIR: &str = env!("VARLIBDIR");
 const DEFAULT_MSG_SIZE: usize = 1024 * 1024;
 const KEY_CHECK_MIN_DELAY: u64 = 60 * 60 * 3;
 const LOG_LEVEL_ENV_VAR: &str = "OPENSMTPD_FILTER_DKIMOUT_LOG_LEVEL";
+const SIG_RETRY_NB_RETRY: usize = 10;
+const SIG_RETRY_SLEEP_TIME: u64 = 10;
 
 #[macro_export]
 macro_rules! display_bytes {
@@ -117,7 +120,7 @@ async fn main_loop(cnf: &config::Config, db: &SqlitePool) {
 							} else {
 								log::debug!("message ready: {msg_id}");
 								if let Some(m) = messages.remove(&msg_id) {
-									actions.push(new_action(Action::SendMessage((m, cnf))));
+									actions.push(new_action(Action::SendMessage((db, cnf, m))));
 								}
 							}
 						}
@@ -127,7 +130,7 @@ async fn main_loop(cnf: &config::Config, db: &SqlitePool) {
 							if !entry.is_end_of_message() {
 								messages.insert(msg_id.clone(), msg);
 							} else {
-								actions.push(new_action(Action::SendMessage((msg, cnf))));
+								actions.push(new_action(Action::SendMessage((db, cnf, msg))));
 							}
 						}
 					}

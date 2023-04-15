@@ -17,7 +17,8 @@ futures = { version = "0.3.28", default-features = false, features = ["std"] }
 log = { version = "0.4.17", default-features = false }
 nom = { version = "7.1.3", default-features = false }
 rand = { version = "0.8.5", default-features = false, features = ["std"] }
-rsa = { version = "0.8.2", default-features = false, features = ["std"] }
+rsa = { version = "0.8.2", default-features = false, features = ["std", "sha2"] }
+sha2 = { version = "0.10.6", default-features = false, features = ["asm", "std"] }
 sqlx = { version = "0.6.3", default-features = false, features = ["runtime-tokio-native-tls", "macros", "migrate", "sqlite", "time"] }
 tokio = { version = "1.27.0", default-features = false, features = ["rt-multi-thread", "io-std", "io-util", "macros", "sync", "time", "process"] }
 uuid = { version = "1.3.1", default-features = false, features = ["v4", "fast-rng"] }

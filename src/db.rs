@@ -38,6 +38,14 @@ WHERE
 	AND published IS FALSE
 ORDER BY not_after DESC
 LIMIT 1";
+pub const SELECT_LATEST_SIGNING_KEY: &str = "SELECT selector, private_key
+FROM key_db
+WHERE
+	sdid = $1
+	AND algorithm = $2
+	AND published IS FALSE
+ORDER BY not_after DESC
+LIMIT 1";
 pub const SELECT_NEAREST_KEY_PUBLICATION: &str = "SELECT revocation
 FROM key_db
 WHERE published IS FALSE

@@ -1,7 +1,9 @@
 use crate::config::Config;
 use crate::entry::Entry;
 use crate::parsed_message::ParsedMessage;
+use crate::signature::Signature;
 use anyhow::Result;
+use sqlx::SqlitePool;
 use tokio::io::{AsyncWriteExt, BufWriter};
 
 pub const RETURN_SEP: &[u8] = b"|";
@@ -52,8 +54,12 @@ impl Message {
 		self.nb_lines
 	}
 
-	pub async fn sign_and_return(&self, cnf: &Config) -> String {
-		log::trace!("content: {}", crate::display_bytes!(&self.content));
+	pub async fn sign_and_return(&self, db: &SqlitePool, cnf: &Config) -> String {
+		let msg_id = get_msg_id(&self.session_id, &self.token);
+		log::trace!(
+			"{msg_id}: content: {}",
+			crate::display_bytes!(&self.content)
+		);
 		match ParsedMessage::from_bytes(&self.content) {
 			Ok(parsed_msg) => {
 				log::trace!("mail parsed");
@@ -75,16 +81,31 @@ impl Message {
 					"ParsedMessage: body: {}",
 					crate::display_bytes!(parsed_msg.body)
 				);
-				// TODO: sign the message using DKIM
+				match Signature::new(db, cnf, &parsed_msg).await {
+					Ok(signature) => {
+						let sig_header = signature.get_header();
+						if let Err(err) = self.print_sig_header(&sig_header).await {
+							log::error!("{msg_id}: unable to add the signature header: {err}");
+						}
+					}
+					Err(err) => log::error!("{msg_id}: unable to sign message: {err}"),
+				}
 			}
 			Err(err) => {
 				log::error!("{msg_id}: unable to parse message: {err}");
 			}
 		}
 		if let Err(err) = self.print_msg().await {
-			log::error!("unable to write message: {err}");
+			log::error!("{msg_id}: unable to write message: {err}");
 		}
-		get_msg_id(&self.session_id, &self.token)
+		msg_id
+	}
+
+	async fn print_sig_header(&self, sig_header: &str) -> Result<()> {
+		for line in sig_header.split("\r\n") {
+			self.print_line(line.as_bytes()).await?;
+		}
+		Ok(())
 	}
 
 	async fn print_msg(&self) -> Result<()> {

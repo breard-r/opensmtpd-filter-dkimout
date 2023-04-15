@@ -1,7 +1,12 @@
+use anyhow::Result;
 use base64::{engine::general_purpose, Engine as _};
-use ed25519_dalek::SigningKey;
+use ed25519_dalek::ed25519::SignatureEncoding;
+use ed25519_dalek::{Signer, SigningKey as Ed25519SigningKey};
 use rand::thread_rng;
-use rsa::pkcs8::{EncodePrivateKey, EncodePublicKey};
+use rsa::pkcs1v15::SigningKey as RsaSigningKey;
+use rsa::pkcs8::{DecodePrivateKey, EncodePrivateKey, EncodePublicKey};
+use rsa::sha2::Sha256;
+use rsa::signature::hazmat::PrehashSigner;
 use rsa::{RsaPrivateKey, RsaPublicKey};
 use std::str::FromStr;
 
@@ -32,10 +37,20 @@ impl Algorithm {
 		}
 	}
 
-	pub fn sign(&self, encoded_pk: &str, data: &[u8]) -> String {
+	pub fn sign(&self, encoded_pk: &str, data: &[u8]) -> Result<Vec<u8>> {
+		let pk = general_purpose::STANDARD.decode(encoded_pk)?;
 		match self {
-			Self::Ed25519Sha256 => String::new(),
-			Self::Rsa2048Sha256 | Self::Rsa3072Sha256 | Self::Rsa4096Sha256 => String::new(),
+			Self::Ed25519Sha256 => {
+				let signing_key = Ed25519SigningKey::from_bytes(pk.as_slice().try_into()?);
+				let signature = signing_key.try_sign(data)?;
+				Ok(signature.to_vec())
+			}
+			Self::Rsa2048Sha256 | Self::Rsa3072Sha256 | Self::Rsa4096Sha256 => {
+				let private_key = RsaPrivateKey::from_pkcs8_der(&pk)?;
+				let signing_key = RsaSigningKey::<Sha256>::new_with_prefix(private_key);
+				let signature = signing_key.sign_prehash(data)?;
+				Ok(signature.to_vec())
+			}
 		}
 	}
 }
@@ -73,7 +88,7 @@ impl FromStr for Algorithm {
 
 fn gen_ed25519_kp() -> (String, String) {
 	let mut csprng = thread_rng();
-	let priv_key = SigningKey::generate(&mut csprng);
+	let priv_key = Ed25519SigningKey::generate(&mut csprng);
 	let pub_key = priv_key.verifying_key();
 	let priv_key = general_purpose::STANDARD.encode(priv_key.to_bytes());
 	let pub_key = general_purpose::STANDARD.encode(pub_key.to_bytes());

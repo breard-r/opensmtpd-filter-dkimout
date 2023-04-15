@@ -11,7 +11,7 @@ use tokio::time::sleep;
 pub enum Action<'a> {
 	ReadLine(Arc<RwLock<StdinReader>>),
 	RotateKeys((&'a SqlitePool, &'a Config)),
-	SendMessage((Message, &'a Config)),
+	SendMessage((&'a SqlitePool, &'a Config, Message)),
 }
 
 pub enum ActionResult {
@@ -36,8 +36,8 @@ pub async fn new_action(action: Action<'_>) -> ActionResult {
 			sleep(duration).await;
 			ActionResult::KeyRotation
 		}
-		Action::SendMessage((msg, cnf)) => {
-			let msg_id = msg.sign_and_return(cnf).await;
+		Action::SendMessage((db, cnf, msg)) => {
+			let msg_id = msg.sign_and_return(db, cnf).await;
 			ActionResult::MessageSent(msg_id)
 		}
 	}
