@@ -232,9 +232,18 @@ mod tests {
 	const HEADER_05: &[u8] = b"Accept-Language	  :			 fr-FR,   en-US		\r\n";
 	const HEADER_06: &[u8] = b"Accept-Language: fr-FR,\r\n  en-US,\r\n de-DE\r\n";
 	const HEADER_07: &[u8] = b"Accept-Language: fr-FR,\r\nen-US\r\n\r\n";
+	const HEADER_08: &[u8] = b"Accept-Language: fr-FR,\r\n \t en-US,\t\r\n de-DE\r\n";
+	const HEADER_09: &[u8] = b"A: X\r\n";
+	const HEADER_10: &[u8] = b"B : Y\t\r\n\tZ  \r\n";
 	const BODY_00: &[u8] = b"\r\n";
 	const BODY_01: &[u8] = b"Hello, World!\r\n";
 	const BODY_02: &[u8] = b"Hello,  World \t!\r\n\r\n\r\ntest \r\nbis\r\n\r\n";
+
+	#[test]
+	fn header_relaxed_00() {
+		let c = Canonicalization::default().set_header_alg(CanonicalizationType::Relaxed);
+		assert_eq!(&c.process_header(HEADER_00), b"accept-language:\r\n");
+	}
 
 	#[test]
 	fn header_relaxed_01() {
@@ -300,6 +309,27 @@ mod tests {
 	}
 
 	#[test]
+	fn header_relaxed_08() {
+		let c = Canonicalization::default().set_header_alg(CanonicalizationType::Relaxed);
+		assert_eq!(
+			&c.process_header(HEADER_08),
+			b"accept-language:fr-FR, en-US, de-DE\r\n"
+		);
+	}
+
+	#[test]
+	fn header_relaxed_09() {
+		let c = Canonicalization::default().set_header_alg(CanonicalizationType::Relaxed);
+		assert_eq!(&c.process_header(HEADER_09), b"a:X\r\n");
+	}
+
+	#[test]
+	fn header_relaxed_10() {
+		let c = Canonicalization::default().set_header_alg(CanonicalizationType::Relaxed);
+		assert_eq!(&c.process_header(HEADER_10), b"b:Y Z\r\n");
+	}
+
+	#[test]
 	fn header_simple_00() {
 		let c = Canonicalization::default().set_header_alg(CanonicalizationType::Simple);
 		assert_eq!(&c.process_header(HEADER_00), HEADER_00);
@@ -345,6 +375,24 @@ mod tests {
 	fn header_simple_07() {
 		let c = Canonicalization::default().set_header_alg(CanonicalizationType::Simple);
 		assert_eq!(&c.process_header(HEADER_07), HEADER_07);
+	}
+
+	#[test]
+	fn header_simple_08() {
+		let c = Canonicalization::default().set_header_alg(CanonicalizationType::Simple);
+		assert_eq!(&c.process_header(HEADER_08), HEADER_08);
+	}
+
+	#[test]
+	fn header_simple_09() {
+		let c = Canonicalization::default().set_header_alg(CanonicalizationType::Simple);
+		assert_eq!(&c.process_header(HEADER_09), HEADER_09);
+	}
+
+	#[test]
+	fn header_simple_10() {
+		let c = Canonicalization::default().set_header_alg(CanonicalizationType::Simple);
+		assert_eq!(&c.process_header(HEADER_10), HEADER_10);
 	}
 
 	#[test]
