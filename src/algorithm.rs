@@ -28,6 +28,13 @@ impl Algorithm {
 		}
 	}
 
+	pub fn key_type(&self) -> String {
+		match self {
+			Self::Ed25519Sha256 => String::from("ed25519"),
+			Self::Rsa2048Sha256 | Self::Rsa3072Sha256 | Self::Rsa4096Sha256 => String::from("rsa"),
+		}
+	}
+
 	pub fn gen_keys(&self) -> (String, String) {
 		match self {
 			Self::Ed25519Sha256 => gen_ed25519_kp(),

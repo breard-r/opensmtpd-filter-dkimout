@@ -43,8 +43,9 @@ impl Signature {
 
 	pub fn get_header(&self) -> String {
 		format!(
-			"DKIM-Signature: v=1; a={algorithm}; c={canonicalization}; d={sdid};\r\n\tt={timestamp}; s={selector};\r\n\th={headers};\r\n\tbh={body_hash};\r\n\tb={signature}",
+			"DKIM-Signature: v=1; a={algorithm}; c={canonicalization}; k={key_type};\r\n\tt={timestamp}; d={sdid};\r\n\ts={selector};\r\n\th={headers};\r\n\tbh={body_hash};\r\n\tb={signature}",
 			algorithm=self.algorithm.display(),
+			key_type=self.algorithm.key_type(),
 			canonicalization=self.canonicalization.to_string(),
 			selector=self.selector,
 			sdid=self.sdid,
