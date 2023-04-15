@@ -44,6 +44,7 @@ async fn publish_expired_keys(db: &SqlitePool, file_path: &Path) -> Result<Durat
 			.await?;
 		let mut buff = BufWriter::new(rev_file);
 		for (selector, sdid, algorithm, private_key) in res {
+			let algorithm = algorithm.parse::<Algorithm>().unwrap().key_type();
 			buff.write_all(algorithm.as_bytes()).await?;
 			buff.write_all(b" ").await?;
 			buff.write_all(private_key.as_bytes()).await?;
