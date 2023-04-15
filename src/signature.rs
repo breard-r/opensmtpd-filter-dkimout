@@ -160,3 +160,61 @@ async fn get_db_data(
 		sleep(Duration::from_secs(crate::SIG_RETRY_SLEEP_TIME)).await;
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	const KEY_ED25519: &str = "Av46g0s6+qCczlLeIkSmD/yD7GX5pDjl8SVTSeVZIhc=";
+	const KEY_RSA2048: &str = "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDDYGEHGABdLxLbvqiuaGdYV9ndsFzdO31AaZoSfCVF0TVPeJ5B/YWyUzc6YIr7qFyfA4tiRPu3/Fy2vzYzG2lcYBkSzJsQWkiOWv6C3CpxYX2tBrAKnJx3ADyr9P3whztyKQBbSNLy+CCNJQ5967Z+PCOeiFAX4XvfCFMpwxsUo6Pv2SYi9PwOq8HwzUQHyy39zOs68XIUF85DCXiQ1kztXzu8HX8nuLX7AnLrf0ZiFGrbSbUjj/F7XVPh2QJxcBLZjrnpve73nrrYsIVnbCvfV563CuFq0PvsUofW7Ckbpwdx26AD59ssaOBNp/uK04xqPSQZyADEngcfkOBdqeHlAgMBAAECggEAYqZQd6d7z5FMQV5Uh7O5staw8Anz6dT22kY4AGtk2orXEyiBKCrdjfwMn9JNeuI42iWNBHJ2cyDeo3uK32VQ3s66+k4LYcdkaVSyu9p1J8ilD2+YBdOsAT5CZEUQz5lIv8zKHE16DiqRLRNv7M7O15CAH7UOU/CLfkMS0rxr+Q//dw94mUTXSy+XKwWgdQSxjiqcfEFEArtP4QH+BM2j7Jk+cMm4OlOklOLlcktSgrCSGp4uqt9BYTq86XFSVaZHbirKAheO7mv9xSXj46zenWaSwWDJ/zYSQHUzTwdCcm35gHeGvUvBo/njCzfvNM6xWl+vrMzD9i4pB0PZ6yi0IQKBgQD/97QWjwdCt7ubRv453lLZ2CXDNt/QFKOr+ESlDPkCxmb/DIY8HDqbJpdyPrCm6MHL8lUBLNixSUfkrCFFaGgpHyG6E5qJT0/UVVwSWUAWciOY7SOZXMPgvkahU39GzPDE8m+mihyDPT98vUqX4HTZJzannaSESGeVtADYXN416QKBgQDDZrYuD4bzjft7XNmmbdl52sfCcKgduzmooSMjeIKffSZuCvpVBA0kEgqLalLaMSCjcx95djufqDkU+RBT7lAbZDYd+lD4m4dNzGqy1hgTVfBaPOYCg4iC2WKiHZDIw8n630gFyRZDAn+KINbcSn7V2ZxqDa1ZE6wAWgiBn98CnQKBgQDSmFnytXqjycbw2lgQBHrmAJARLPS3nkOLGZhgs2usfNAAx60ph5AwVnAD7tAogxfvVFHbxaoDMueTnItDL8ODEboN/lMG5dooOJKoBgZUcVQYXgMMCuad4e76jFgLSFJPt6dkvfz3fUzetF7K1kFM6JZvEaRpsaiH4rFPUhkBAQKBgHwXepL94WJDRPYvHToIgRhVzI67JMjc4d0pmDsqiSnoPMOdzSS4ke/aVT/8oelXUbb7oX1tjKf0GWwsUCY9Ljp3Bbc8BLgdbWwG6avxMxD0ftOP4TKvfb47d9wkkpItZNQhgIfMEIs1xvFdsZXs6We97wua6/+p8o22n7hSYzoxAoGBAM9zQgkeV2U++yi4memcNX1sLnRHaBUSShj+IXhOM8Hpw5deyxFKUh2sD537CJxKOx+8XMKvWilY2MFRCZIlTAQBasEfj9+YZSLY7kFHfWKcUKhqVQ+5M+LgbuZjf6X/0Y+2Lqc585NoxmMDc4GC/1t4eagXqMvcuh10S2JP9RWp";
+	const MSG_01_RAW: &[u8] = include_bytes!("../test_samples/single_message_raw.txt");
+	const MSG_01_HEADERS: &[&str] = &[
+		"Date",
+		"From",
+		"Resent-Date",
+		"Subject",
+		"To",
+		"cc",
+		"reply-to",
+	];
+
+	#[test]
+	fn test_simple_simple() {
+		let ref_sig_header = "DKIM-Signature: v=1; a=ed25519-sha256; c=simple/simple; k=ed25519;\r\n\tt=1681595158; d=example.org;\r\n\ts=dkim-b3fb546a27bb44dd88a1fd2b4b3e2e96;\r\n\th=Date:From:Resent-Date:Subject:To:cc:reply-to;\r\n\tbh=z85OKVJZHnmg3qFlSpLbpPCZ00irfBdrzQUtabiSl3A=;\r\n\tb=bZ6L4KlVpTNjcw1ct31b/s2/OwGwFceiKwSwSYP3wQPIF6We4cyc7rj1KcqoLCNHPJ6hc575enSCra/u+I76CQ==";
+		let msg = ParsedMessage::from_bytes(MSG_01_RAW).unwrap();
+		let mut sig = Signature {
+			algorithm: Algorithm::Ed25519Sha256,
+			canonicalization: "simple/simple".parse().unwrap(),
+			selector: "dkim-b3fb546a27bb44dd88a1fd2b4b3e2e96".into(),
+			sdid: "example.org".into(),
+			timestamp: 1681595158,
+			headers: MSG_01_HEADERS.iter().map(|h| h.to_string()).collect(),
+			body_hash: Vec::new(),
+			signature: Vec::new(),
+		};
+		sig.compute_body_hash::<Sha256>(&msg);
+		let header_hash = sig.compute_header_hash::<Sha256>(&msg);
+		sig.signature = sig.algorithm.sign(KEY_ED25519, &header_hash).unwrap();
+		assert_eq!(sig.get_header(), ref_sig_header);
+	}
+
+	#[test]
+	fn test_relaxed_relaxed() {
+		let ref_sig_header = "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; k=rsa;\r\n\tt=1681593844; d=example.org;\r\n\ts=dkim-681d955d9fc84d978d71a7d7f8ce7dd6;\r\n\th=Date:From:Resent-Date:Subject:To:cc:reply-to;\r\n\tbh=z85OKVJZHnmg3qFlSpLbpPCZ00irfBdrzQUtabiSl3A=;\r\n\tb=KEEDvT+AeciblB+vhJsVogiGswJSRA6VkjjcL42jbBvrOjJO7GBobB9Kgrv/LftWQ+VZtpsd7xRMcbzznfuqAxFDpuL5gpnRQ6MsqSWLqUCMeBLKyPgufwlyii8ksEmu4a+sL4+IxwccuAcPiMGbwnwqzcRfWZA2xsBSh2wxC8iKpSzaKm26xEFsw+ZY8Pg9AQvjRpeaf3eqgv9nhvfCGhe2HvefbU9UyQc4LWa9zb2X4e2x0DVWCScfeznsb8i+MLS0TOGPdgeP/z+GuSKI2z1GgVbF7x3xQyzta8U+t1ompq0aGxIiBrHP1/68EUU0MfOKnJqIHZakITxvmAAIvg==";
+		let msg = ParsedMessage::from_bytes(MSG_01_RAW).unwrap();
+		let mut sig = Signature {
+			algorithm: Algorithm::Rsa2048Sha256,
+			canonicalization: "relaxed/relaxed".parse().unwrap(),
+			selector: "dkim-681d955d9fc84d978d71a7d7f8ce7dd6".into(),
+			sdid: "example.org".into(),
+			timestamp: 1681593844,
+			headers: MSG_01_HEADERS.iter().map(|h| h.to_string()).collect(),
+			body_hash: Vec::new(),
+			signature: Vec::new(),
+		};
+		sig.compute_body_hash::<Sha256>(&msg);
+		let header_hash = sig.compute_header_hash::<Sha256>(&msg);
+		sig.signature = sig.algorithm.sign(KEY_RSA2048, &header_hash).unwrap();
+		assert_eq!(sig.get_header(), ref_sig_header);
+	}
+}
