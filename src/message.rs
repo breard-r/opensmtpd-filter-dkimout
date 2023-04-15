@@ -118,6 +118,11 @@ impl Message {
 	}
 
 	async fn print_line(&self, line: &[u8]) -> Result<()> {
+		let line = if line.ends_with(&[b'\r']) {
+			&line[..line.len() - 1]
+		} else {
+			line
+		};
 		let mut stdout = BufWriter::new(tokio::io::stdout());
 		stdout.write_all(RETURN_START).await?;
 		stdout.write_all(self.session_id.as_bytes()).await?;
