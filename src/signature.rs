@@ -128,7 +128,9 @@ fn get_header<'a>(
 	header_name: &'a str,
 ) -> Option<&'a ParsedHeader<'a>> {
 	let header_name = header_name.to_lowercase();
-	msg.headers.iter().find(|&header| header.name_lower == header_name)
+	msg.headers
+		.iter()
+		.find(|&header| header.name_lower == header_name)
 }
 
 async fn get_db_data(
