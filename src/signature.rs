@@ -71,8 +71,10 @@ impl Signature {
 				hasher.update(&header);
 			}
 		}
-		let dkim_header = self.get_header();
-		let dkim_header = self.canonicalization.process_header(dkim_header.as_bytes());
+		let dkim_header = format!("{}\r\n", self.get_header());
+		let mut dkim_header = self.canonicalization.process_header(dkim_header.as_bytes());
+		dkim_header.pop();
+		dkim_header.pop();
 		hasher.update(dkim_header);
 		hasher.finalize().to_vec()
 	}
