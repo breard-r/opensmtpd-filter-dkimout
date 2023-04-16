@@ -50,7 +50,7 @@ Matthew Green wrote an excellent article on this subject: [Ok Google: please pub
 
 ### Where is the documentation?
 
-A man page will be available by the time this filter is ready to use.
+The complete documentation can be found in the `filter-dkimout (8)` man page.
 
 ### One of my keys has been compromised, how do I revoke it?
 

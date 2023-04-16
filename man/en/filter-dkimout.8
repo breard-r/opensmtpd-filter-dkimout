@@ -1,0 +1,150 @@
+.\" Copyright (c) 2019-2020 Rodolphe Bréard <rodolphe@breard.tf>
+.\"
+.\" Copying and distribution of this file, with or without modification,
+.\" are permitted in any medium without royalty provided the copyright
+.\" notice and this notice are preserved.  This file is offered as-is,
+.\" without any warranty.
+.Dd Apr 16, 2023
+.Dt FILTER-DKIMOUT 8
+.Os
+.Sh NAME
+.Nm filter-dkimout
+.Nd DKIM filter for OpenSMTPD
+.Sh SYNOPSIS
+.Nm
+.Op Fl a|--algorithm Ar STRING
+.Op Fl b|--key-data-base Ar FILE
+.Op Fl c|--canonicalization Ar STRING
+.Op Fl d|--domain Ar STRING
+.Op Fl D|--domain-file Ar FILE
+.Op Fl f|--revocation-list Ar FILE
+.Op Fl h|--header Ar STRING
+.Op Fl o|--header-optional Ar STRING
+.Op Fl p|--cryptoperiod Ar UINT
+.Op Fl r|--revocation Ar UINT
+.Op Fl u|--dns-update-cmd Ar STRING
+.Op Fl v|--verbose
+.Op Fl V|--version
+.Op Fl x|--expiration Ar UINT
+.Sh DESCRIPTION
+.Nm
+is an OpenSMTPD filter for OpenSMTPD that signs outgoing emails using DKIM.
+It provides automatic key generation and rotation.
+.Pp
+The options are as follows:
+.Bl -tag
+.It Fl a, -algorithm Ar STRING
+The signing algorithm. Possible values are:
+.Pp
+.Bl -dash -compact
+.It
+ed25519-sha256
+.It
+rsa2048-sha256
+.Aq default
+.It
+rsa3072-sha256
+.It
+rsa4096-sha256
+.El
+.It Fl b, -key-data-base Ar FILE
+Path to an SQLite 3 database where keys are stored.
+Will be created if does not exists.
+.It Fl c, -canonicalization Ar STRING
+The canonicalization algorithm used to generate the signature.
+Must be composed of two methods separated by a slash character.
+The first method will be used for the headers and the second one for the body.
+Available methods are:
+.Pp
+.Bl -dash -compact
+.It
+simple
+.It
+relaxed
+.El
+.Pp
+Default is
+.Qo
+relaxed/relaxed
+.Qc .
+.It Fl d, -domain Ar STRING
+A domain name for which it is possible to sign for.
+Multiple
+.Fl d
+options are additive.
+.It Fl D, -domain-file Ar FILE
+Path to a file witch contains a domain name on each line.
+.It Fl f, -revocation-list Ar FILE
+Path to the revocation list file.
+Will be created if does not exists.
+This file is opened in append mode, which means previous content will not be deleted.
+.It Fl h, -header Ar STRING
+Header that will always be included in the signature, even if not present.
+It is possible to specify multiple headers separated by a colon.
+Multiple
+.Fl h
+options are additive.
+Set to an empty string to deactivate.
+.Pp
+Default is
+.Qo
+from:reply-to:subject:date:to:cc
+.Qc .
+.It Fl o, -header-optional Ar STRING
+Header that will be included in the signature only if present.
+It is possible to specify multiple headers separated by a colon.
+Multiple
+.Fl o
+options are additive.
+Set to an empty string to deactivate.
+.Pp
+Default is
+.Qo
+resent-date:resent-from:resent-to:resent-cc:in-reply-to:references:list-id:list-help:list-unsubscribe:list-subscribe:list-post:list-owner:list-archive
+.Qc .
+.It Fl p, -cryptoperiod Ar UINT
+The cryptoperiod, in seconds.
+Default is 15552000
+.Aq 180 days .
+.It Fl r, -revocation Ar UINT
+Number of seconds between the end of the cryptoperiod and the revocation.
+Default is 1728000
+.Aq 20 days .
+.It Fl u, -dns-update-cmd Ar STRING
+Command that will be executed to update DNS entries.
+.It Fl v, -verbose
+Verbose mode.
+Multiple
+.Fl v
+options increase the verbosity.
+The maximum is 2.
+.It Fl V, -version
+Display the version number and exit.
+.It Fl x, -expiration Ar UINT
+Signature expiration, in seconds.
+Default is 1296000
+.Aq 15 days .
+Set to 0 to deactivate.
+.El
+.Sh SEE ALSO
+.Xr smtpd-filters 7
+.Sh STANDARDS
+.Bl -hyphen
+.It
+.Rs
+.%A D. Crocker
+.%D September 2011
+.%R RFC 6376
+.%T DomainKeys Identified Mail (DKIM) Signatures
+.Re
+.It
+.Rs
+.%A J. Levine
+.%D September 2018
+.%R RFC 8463
+.%T A New Cryptographic Signature Method for DomainKeys Identified Mail (DKIM)
+.Re
+.El
+.Sh AUTHORS
+.An Rodolphe Bréard
+.Aq rodolphe@breard.tf
