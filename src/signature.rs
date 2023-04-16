@@ -15,6 +15,7 @@ pub struct Signature {
 	selector: String,
 	sdid: String,
 	timestamp: i64,
+	expiration: Option<u64>,
 	headers: Vec<String>,
 	body_hash: Vec<u8>,
 	signature: Vec<u8>,
@@ -25,12 +26,15 @@ impl Signature {
 		let algorithm = cnf.algorithm();
 		let sdid = get_sdid(cnf, msg)?;
 		let (selector, signing_key) = get_db_data(db, &sdid, algorithm).await?;
+		let timestamp = OffsetDateTime::now_utc().unix_timestamp();
+		let expiration = cnf.expiration().map(|x| x + timestamp as u64);
 		let mut sig = Self {
 			algorithm,
 			canonicalization: cnf.canonicalization(),
 			selector,
 			sdid,
-			timestamp: OffsetDateTime::now_utc().unix_timestamp(),
+			timestamp,
+			expiration,
 			headers: get_headers(cnf, msg),
 			body_hash: Vec::new(),
 			signature: Vec::new(),
@@ -42,14 +46,19 @@ impl Signature {
 	}
 
 	pub fn get_header(&self) -> String {
+		let expiration = self
+			.expiration
+			.map(|x| format!(" x={x};"))
+			.unwrap_or(String::new());
 		format!(
-			"DKIM-Signature: v=1; a={algorithm}; c={canonicalization}; k={key_type};\r\n\tt={timestamp}; d={sdid};\r\n\ts={selector};\r\n\th={headers};\r\n\tbh={body_hash};\r\n\tb={signature}",
+			"DKIM-Signature: v=1; a={algorithm}; k={key_type}; c={canonicalization};\r\n\tt={timestamp};{expiration}\r\n\td={sdid};\r\n\ts={selector};\r\n\th={headers};\r\n\tbh={body_hash};\r\n\tb={signature}",
 			algorithm=self.algorithm.display(),
 			key_type=self.algorithm.key_type(),
 			canonicalization=self.canonicalization.to_string(),
 			selector=self.selector,
 			sdid=self.sdid,
 			timestamp=self.timestamp,
+			expiration=expiration,
 			headers=self.headers.join(":"),
 			body_hash=general_purpose::STANDARD.encode(&self.body_hash),
 			signature=general_purpose::STANDARD.encode(&self.signature),
@@ -180,7 +189,7 @@ mod tests {
 
 	#[test]
 	fn test_simple_simple() {
-		let ref_sig_header = "DKIM-Signature: v=1; a=ed25519-sha256; c=simple/simple; k=ed25519;\r\n\tt=1681595158; d=example.org;\r\n\ts=dkim-b3fb546a27bb44dd88a1fd2b4b3e2e96;\r\n\th=Date:From:Resent-Date:Subject:To:cc:reply-to;\r\n\tbh=z85OKVJZHnmg3qFlSpLbpPCZ00irfBdrzQUtabiSl3A=;\r\n\tb=bZ6L4KlVpTNjcw1ct31b/s2/OwGwFceiKwSwSYP3wQPIF6We4cyc7rj1KcqoLCNHPJ6hc575enSCra/u+I76CQ==";
+		let ref_sig_header = "DKIM-Signature: v=1; a=ed25519-sha256; k=ed25519; c=simple/simple;\r\n\tt=1681595158;\r\n\td=example.org;\r\n\ts=dkim-b3fb546a27bb44dd88a1fd2b4b3e2e96;\r\n\th=Date:From:Resent-Date:Subject:To:cc:reply-to;\r\n\tbh=z85OKVJZHnmg3qFlSpLbpPCZ00irfBdrzQUtabiSl3A=;\r\n\tb=854DPGA77UnhEagQIK+x/PLz/YEzoxZO2PDDk6ojASwhUqcuSkOdy9XiuTsQSgpaSQwjui3OuYm9VG6/j3G+AQ==";
 		let msg = ParsedMessage::from_bytes(MSG_01_RAW).unwrap();
 		let mut sig = Signature {
 			algorithm: Algorithm::Ed25519Sha256,
@@ -188,6 +197,7 @@ mod tests {
 			selector: "dkim-b3fb546a27bb44dd88a1fd2b4b3e2e96".into(),
 			sdid: "example.org".into(),
 			timestamp: 1681595158,
+			expiration: None,
 			headers: MSG_01_HEADERS.iter().map(|h| h.to_string()).collect(),
 			body_hash: Vec::new(),
 			signature: Vec::new(),
@@ -200,7 +210,7 @@ mod tests {
 
 	#[test]
 	fn test_relaxed_relaxed() {
-		let ref_sig_header = "DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; k=rsa;\r\n\tt=1681593844; d=example.org;\r\n\ts=dkim-681d955d9fc84d978d71a7d7f8ce7dd6;\r\n\th=Date:From:Resent-Date:Subject:To:cc:reply-to;\r\n\tbh=z85OKVJZHnmg3qFlSpLbpPCZ00irfBdrzQUtabiSl3A=;\r\n\tb=KEEDvT+AeciblB+vhJsVogiGswJSRA6VkjjcL42jbBvrOjJO7GBobB9Kgrv/LftWQ+VZtpsd7xRMcbzznfuqAxFDpuL5gpnRQ6MsqSWLqUCMeBLKyPgufwlyii8ksEmu4a+sL4+IxwccuAcPiMGbwnwqzcRfWZA2xsBSh2wxC8iKpSzaKm26xEFsw+ZY8Pg9AQvjRpeaf3eqgv9nhvfCGhe2HvefbU9UyQc4LWa9zb2X4e2x0DVWCScfeznsb8i+MLS0TOGPdgeP/z+GuSKI2z1GgVbF7x3xQyzta8U+t1ompq0aGxIiBrHP1/68EUU0MfOKnJqIHZakITxvmAAIvg==";
+		let ref_sig_header = "DKIM-Signature: v=1; a=rsa-sha256; k=rsa; c=relaxed/relaxed;\r\n\tt=1681593844; x=1682889844;\r\n\td=example.org;\r\n\ts=dkim-681d955d9fc84d978d71a7d7f8ce7dd6;\r\n\th=Date:From:Resent-Date:Subject:To:cc:reply-to;\r\n\tbh=z85OKVJZHnmg3qFlSpLbpPCZ00irfBdrzQUtabiSl3A=;\r\n\tb=o83MyMVH6fz4lhGG5za33rmE/D8RJLezFw9Jqds2l6Pt9uDUZCHbh6YjWJjBBbaKJBlrGWGyKBe4x5ns84oHjGyehd8mbyJc9mu1HjJZQVH7bZPPb0N0gt9tl+7hz9S5GvPE6hE4c3VxynhV/KxoJXa6tdM8JUlTKhcaZyacl1kFcgUlFriyMcID9451evmlmEJ8hiGnxqpXdThxVluKNqV9jYlLAlH4/eIqKWh9RkAqeQufTd8jbfokoF7KDCYRaM+y7uoi3Ir6KKt3NuwrYYv6lmhkzuhF4/4+o6CeNtCQ4boAlVBiGFBX5MDKeHg410yfQZqHm/2mlV9pNU+H4g==";
 		let msg = ParsedMessage::from_bytes(MSG_01_RAW).unwrap();
 		let mut sig = Signature {
 			algorithm: Algorithm::Rsa2048Sha256,
@@ -208,6 +218,7 @@ mod tests {
 			selector: "dkim-681d955d9fc84d978d71a7d7f8ce7dd6".into(),
 			sdid: "example.org".into(),
 			timestamp: 1681593844,
+			expiration: Some(1682889844),
 			headers: MSG_01_HEADERS.iter().map(|h| h.to_string()).collect(),
 			body_hash: Vec::new(),
 			signature: Vec::new(),
