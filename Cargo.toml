@@ -1,5 +1,5 @@
 [package]
-name = "opensmtpd-filter-dkimout"
+name = "filter-dkimout"
 version = "0.1.0"
 authors = ["Rodolphe Bréard <rodolphe@what.tf>"]
 edition = "2021"
