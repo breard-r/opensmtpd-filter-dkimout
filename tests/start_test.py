@@ -175,9 +175,9 @@ def start_tests(test_dir, smtp_port, canonicalization):
             for test_msg in glob.iglob(f"{test_dir}/*.msg"):
                 nb_total += 1
                 nb += send_msg(smtp_session, test_msg)
-    except e:
+    except Exception:
         kill_opensmtpd(pid_smtpd)
-        raise e
+        raise
     finally:
         os.remove(f)
         os.remove(d)
