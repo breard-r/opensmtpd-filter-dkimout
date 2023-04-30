@@ -19,6 +19,9 @@ ADDR_TO = "test@example.com"
 DB_NAME = "key-db.sqlite3"
 DEFAULT_PORT = 2525
 
+def fail(message):
+    print(message, file=sys.stderr)
+    sys.exit(1)
 
 def cp_tmp_file(path, executable=False):
     file = tempfile.NamedTemporaryFile(suffix=f"-{path.name}", delete=False)
@@ -129,7 +132,8 @@ def start_opensmtpd(cfg_path):
 
 
 def kill_opensmtpd(pid):
-    subprocess.Popen([shutil.which("sudo"), shutil.which("kill"), f"{pid}"])
+    if pid is not None:
+        subprocess.Popen([shutil.which("sudo"), shutil.which("kill"), f"{pid}"])
 
 
 def fix_perms(path):
@@ -152,7 +156,6 @@ def get_maildir():
     os.chmod(maildir.name, flags)
     return maildir
 
-
 def start_tests(test_dir, smtp_port, canonicalization):
     # Sending emails to OpenSMTPD
     maildir = get_maildir()
@@ -169,17 +172,18 @@ def start_tests(test_dir, smtp_port, canonicalization):
             for test_msg in glob.iglob(f"{test_dir}/*.msg"):
                 nb_total += 1
                 nb += send_msg(smtp_session, test_msg)
+    except e:
+        kill_opensmtpd(pid_smtpd)
+        raise e
     finally:
         os.remove(f)
         os.remove(d)
-        if pid_smtpd is not None:
-            kill_opensmtpd(pid_smtpd)
     msg = "messages" if nb > 1 else "message"
     print(f"{nb} {msg} delivered")
     nb_failed = nb_total - nb
     if nb_failed > 0:
         msg = "messages" if nb_failed > 1 else "message"
-        print(f"{nb_failed} {msg} could not be delivered")
+        fail(f"{nb_failed} {msg} could not be delivered")
 
     # Testing DKIM signatures
     nb_dkim_ok = 0
@@ -187,12 +191,14 @@ def start_tests(test_dir, smtp_port, canonicalization):
     fix_perms(f"{maildir.name}/Maildir")
     maildir_glob = f"{maildir.name}/Maildir/new/*"
     nb_sleep = 0
-    while len(glob.glob(maildir_glob)) < nb_total:
+    while True:
         nb_sleep += 1
         if nb_sleep > 6:
-            print("Some messages have not been received.", file=sys.stderr)
-            sys.exit(1)
+            fail("Some messages have not been received.")
         time.sleep(nb_sleep)
+        if len(glob.glob(maildir_glob)) == nb_total:
+            break
+    kill_opensmtpd(pid_smtpd)
     for test_msg in glob.glob(maildir_glob):
         nb_dkim_total += 1
         nb_dkim_ok += test_dkim(test_msg)
@@ -201,7 +207,7 @@ def start_tests(test_dir, smtp_port, canonicalization):
     nb_failed = nb_dkim_total - nb_dkim_ok
     if nb_failed > 0:
         msg = "messages" if nb_failed > 1 else "message"
-        print(f"{nb_failed} {msg} failed the DKIM signature test")
+        fail(f"{nb_failed} {msg} failed the DKIM signature test")
 
 
 def main():
