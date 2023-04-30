@@ -214,10 +214,12 @@ def start_tests(test_dir, smtp_port, canonicalization):
 
 
 def main():
+    method = "relaxed/relaxed"
+    if len(sys.argv) > 1:
+        method = sys.argv[1]
     test_dir = pathlib.Path(__file__).parent.resolve()
     os.chdir(test_dir.parent)
-    start_tests(test_dir, DEFAULT_PORT, "simple/simple")
-    start_tests(test_dir, DEFAULT_PORT, "relaxed/relaxed")
+    start_tests(test_dir, DEFAULT_PORT, method)
 
 
 if __name__ == "__main__":

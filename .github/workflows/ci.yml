@@ -60,7 +60,9 @@ jobs:
           command: build
           args: --verbose --all-features
       - name: Run the integration test
-        run: ./tests/start_test.py
+        run: ./tests/start_test.py "simple/simple"
+      - name: Run the integration test
+        run: ./tests/start_test.py "relaxed/relaxed"
   cargo-fmt:
     name: Cargo fmt
     runs-on: ubuntu-latest
