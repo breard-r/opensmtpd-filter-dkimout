@@ -136,8 +136,26 @@ def fix_perms(path):
     subprocess.Popen([shutil.which("sudo"), shutil.which("chmod"), "-R", "777", path])
 
 
-def start_tests(test_dir, maildir, smtp_port):
+def get_maildir():
+    maildir = tempfile.TemporaryDirectory(prefix="Maildir_")
+    flags = (
+        stat.S_IRUSR
+        | stat.S_IWUSR
+        | stat.S_IXUSR
+        | stat.S_IRGRP
+        | stat.S_IWGRP
+        | stat.S_IXGRP
+        | stat.S_IROTH
+        | stat.S_IWOTH
+        | stat.S_IXOTH
+    )
+    os.chmod(maildir.name, flags)
+    return maildir
+
+
+def start_tests(test_dir, smtp_port):
     # Sending emails to OpenSMTPD
+    maildir = get_maildir()
     f, d, filter_cmd = get_cmd_filter_dkimout(
         test_dir, "ed25519-sha256", "relaxed/relaxed", "debug"
     )
@@ -186,28 +204,10 @@ def start_tests(test_dir, maildir, smtp_port):
         print(f"{nb_failed} {msg} failed the DKIM signature test")
 
 
-def get_maildir():
-    maildir = tempfile.TemporaryDirectory(prefix="Maildir_")
-    flags = (
-        stat.S_IRUSR
-        | stat.S_IWUSR
-        | stat.S_IXUSR
-        | stat.S_IRGRP
-        | stat.S_IWGRP
-        | stat.S_IXGRP
-        | stat.S_IROTH
-        | stat.S_IWOTH
-        | stat.S_IXOTH
-    )
-    os.chmod(maildir.name, flags)
-    return maildir
-
-
 def main():
     test_dir = pathlib.Path(__file__).parent.resolve()
     os.chdir(test_dir.parent)
-    maildir = get_maildir()
-    start_tests(test_dir, maildir, DEFAULT_PORT)
+    start_tests(test_dir, DEFAULT_PORT)
 
 
 if __name__ == "__main__":
