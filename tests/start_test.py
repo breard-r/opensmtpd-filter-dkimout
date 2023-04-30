@@ -153,11 +153,11 @@ def get_maildir():
     return maildir
 
 
-def start_tests(test_dir, smtp_port):
+def start_tests(test_dir, smtp_port, canonicalization):
     # Sending emails to OpenSMTPD
     maildir = get_maildir()
     f, d, filter_cmd = get_cmd_filter_dkimout(
-        test_dir, "ed25519-sha256", "relaxed/relaxed", "debug"
+        test_dir, "ed25519-sha256", canonicalization, "debug"
     )
     nb = 0
     nb_total = 0
@@ -207,7 +207,8 @@ def start_tests(test_dir, smtp_port):
 def main():
     test_dir = pathlib.Path(__file__).parent.resolve()
     os.chdir(test_dir.parent)
-    start_tests(test_dir, DEFAULT_PORT)
+    start_tests(test_dir, DEFAULT_PORT, "relaxed/relaxed")
+    start_tests(test_dir, DEFAULT_PORT, "simple/simple")
 
 
 if __name__ == "__main__":
