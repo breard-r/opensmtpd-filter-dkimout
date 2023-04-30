@@ -19,9 +19,11 @@ ADDR_TO = "test@example.com"
 DB_NAME = "key-db.sqlite3"
 DEFAULT_PORT = 2525
 
+
 def fail(message):
     print(message, file=sys.stderr)
     sys.exit(1)
+
 
 def cp_tmp_file(path, executable=False):
     file = tempfile.NamedTemporaryFile(suffix=f"-{path.name}", delete=False)
@@ -155,6 +157,7 @@ def get_maildir():
     )
     os.chmod(maildir.name, flags)
     return maildir
+
 
 def start_tests(test_dir, smtp_port, canonicalization):
     # Sending emails to OpenSMTPD
