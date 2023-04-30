@@ -36,6 +36,11 @@ jobs:
   integration-test:
     name: Integration test
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        canonicalization:
+          - simple/simple
+          - relaxed/relaxed
     steps:
       - uses: actions/checkout@v3
       - name: Apt update
@@ -59,10 +64,8 @@ jobs:
         with:
           command: build
           args: --verbose --all-features
-      #- name: Run the integration test using simple/simple
-      #  run: ./tests/start_test.py "simple/simple"
       - name: Run the integration test using relaxed/relaxed
-        run: ./tests/start_test.py "relaxed/relaxed"
+        run: ./tests/start_test.py ${{ matrix.canonicalization }}
   cargo-fmt:
     name: Cargo fmt
     runs-on: ubuntu-latest
