@@ -5,6 +5,7 @@ import glob
 import logging
 import os
 import pathlib
+import shutil
 import smtplib
 import sqlite3
 import stat
@@ -114,6 +115,25 @@ def test_dkim(message_path):
     return 0
 
 
+def start_opensmtpd(cfg_path):
+    args = [
+        shutil.which("sudo"),
+        shutil.which("smtpd"),
+        "-d",
+        "-f",
+        cfg_path.name,
+    ]
+    p = subprocess.Popen(
+        args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    time.sleep(5)
+    return p.pid
+
+
+def kill_opensmtpd(pid):
+    subprocess.Popen([shutil.which("sudo"), shutil.which("kill"), f"{pid}"])
+
+
 def start_tests(test_dir, maildir, smtp_port):
     # Sending emails to OpenSMTPD
     f, d, filter_cmd = get_cmd_filter_dkimout(
@@ -121,11 +141,10 @@ def start_tests(test_dir, maildir, smtp_port):
     )
     nb = 0
     nb_total = 0
+    pid_smtpd = None
     try:
         cfg_path = get_opensmtpd_config(smtp_port, filter_cmd, maildir.name)
-        print("Start OpenSMTPD using the following command then press enter:")
-        print(f'smtpd -d -f "{cfg_path.name}"')
-        input("")
+        pid_smtpd = start_opensmtpd(cfg_path)
         with get_smtp_session(smtp_port) as smtp_session:
             for test_msg in glob.iglob(f"{test_dir}/*.msg"):
                 nb_total += 1
@@ -133,6 +152,8 @@ def start_tests(test_dir, maildir, smtp_port):
     finally:
         os.remove(f)
         os.remove(d)
+        if pid_smtpd is not None:
+            kill_opensmtpd(pid_smtpd)
     msg = "messages" if nb > 1 else "message"
     print(f"{nb} {msg} delivered")
     nb_failed = nb_total - nb
@@ -155,8 +176,6 @@ def start_tests(test_dir, maildir, smtp_port):
     if nb_failed > 0:
         msg = "messages" if nb_failed > 1 else "message"
         print(f"{nb_failed} {msg} failed the DKIM signature test")
-
-    input("\nPress enter to exit.")
 
 
 def main():
