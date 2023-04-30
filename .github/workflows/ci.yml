@@ -46,6 +46,8 @@ jobs:
         run: sudo apt install -y python3-dkim python3-dnspython python3-nacl python3-authres
       - name: Install OpenSMTPD
         run: sudo apt install -y opensmtpd
+      - name: Stop OpenSMTPD
+        run: systemctl stop opensmtpd.service
       - name: Install Rust stable
         uses: actions-rs/toolchain@v1
         with:
