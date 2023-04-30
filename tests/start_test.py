@@ -55,8 +55,8 @@ filter "dkim" proc-exec "{filter_cmd}"
 table vuser {{ "test" = "1000:100:{maildir_path}" }}
 
 # Listening
-listen on 127.0.0.1 port {port} filter "dkim"
-listen on ::1 port {port} filter "dkim"
+listen on 127.0.0.1 port {port} hostname localhost filter "dkim"
+listen on ::1 port {port} hostname localhost filter "dkim"
 
 # Delivering
 action "deliver" maildir userbase <vuser>
