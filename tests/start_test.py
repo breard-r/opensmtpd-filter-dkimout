@@ -132,6 +132,10 @@ def kill_opensmtpd(pid):
     subprocess.Popen([shutil.which("sudo"), shutil.which("kill"), f"{pid}"])
 
 
+def fix_perms(path):
+    subprocess.Popen([shutil.which("sudo"), shutil.which("chmod"), "-R", "777", path])
+
+
 def start_tests(test_dir, maildir, smtp_port):
     # Sending emails to OpenSMTPD
     f, d, filter_cmd = get_cmd_filter_dkimout(
@@ -162,6 +166,7 @@ def start_tests(test_dir, maildir, smtp_port):
     # Testing DKIM signatures
     nb_dkim_ok = 0
     nb_dkim_total = 0
+    fix_perms(f"{maildir.name}/Maildir")
     maildir_glob = f"{maildir.name}/Maildir/new/*"
     nb_sleep = 0
     while len(glob.glob(maildir_glob)) < nb_total:
