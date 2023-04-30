@@ -123,9 +123,7 @@ def start_opensmtpd(cfg_path):
         "-f",
         cfg_path.name,
     ]
-    p = subprocess.Popen(
-        args, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    p = subprocess.Popen(args)
     time.sleep(5)
     return p.pid
 
