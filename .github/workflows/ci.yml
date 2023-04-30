@@ -47,7 +47,7 @@ jobs:
       - name: Install OpenSMTPD
         run: sudo apt install -y opensmtpd
       - name: Stop OpenSMTPD
-        run: systemctl stop opensmtpd.service
+        run: sudo systemctl stop opensmtpd.service
       - name: Install Rust stable
         uses: actions-rs/toolchain@v1
         with:
