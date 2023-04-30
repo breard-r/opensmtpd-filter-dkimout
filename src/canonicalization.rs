@@ -180,6 +180,9 @@ fn header_simple(data: &[u8]) -> Vec<u8> {
 fn body_relaxed(data: &[u8]) -> Vec<u8> {
 	let mut data = data.to_vec();
 
+	// RFC 5321, section 4.5.2
+	rm_dot_escape(&mut data);
+
 	// Ignore all whitespace at the end of lines.
 	while let Some(pos) = data
 		.windows(3)
@@ -210,6 +213,9 @@ fn body_relaxed(data: &[u8]) -> Vec<u8> {
 fn body_simple(data: &[u8]) -> Vec<u8> {
 	let mut data = data.to_vec();
 
+	// RFC 5321, section 4.5.2
+	rm_dot_escape(&mut data);
+
 	// Ignore all empty lines at the end of the message body.
 	while data.ends_with(b"\r\n\r\n") {
 		let pos = data.len();
@@ -218,6 +224,22 @@ fn body_simple(data: &[u8]) -> Vec<u8> {
 	}
 
 	data
+}
+
+fn rm_dot_escape(data: &mut Vec<u8>) {
+	let mut positions = Vec::with_capacity(1024);
+	let mut data_it = data.windows(3);
+	while let Some(pos) = data_it.position(|w| w == b"\r\n.") {
+		let pos_abs = match positions.last() {
+			Some(last_pos) => last_pos + pos + 1,
+			None => pos + 2,
+		};
+		positions.push(pos_abs);
+	}
+	positions.reverse();
+	for pos in positions {
+		data.remove(pos);
+	}
 }
 
 #[cfg(test)]
@@ -238,6 +260,7 @@ mod tests {
 	const BODY_00: &[u8] = b"\r\n";
 	const BODY_01: &[u8] = b"Hello, World!\r\n";
 	const BODY_02: &[u8] = b"Hello,  World \t!\r\n\r\n\r\ntest \r\nbis\r\n\r\n";
+	const BODY_03: &[u8] = b"Hello, World!\r\n..\r\n......plop\r\n...test\r\n..re-test\r\n";
 
 	#[test]
 	fn header_relaxed_00() {
@@ -417,6 +440,15 @@ mod tests {
 	}
 
 	#[test]
+	fn body_simple_03() {
+		let c = Canonicalization::default().set_body_alg(CanonicalizationType::Simple);
+		assert_eq!(
+			&c.process_body(BODY_03),
+			b"Hello, World!\r\n.\r\n.....plop\r\n..test\r\n.re-test\r\n"
+		);
+	}
+
+	#[test]
 	fn body_relaxed_00() {
 		let c = Canonicalization::default().set_body_alg(CanonicalizationType::Relaxed);
 		assert_eq!(&c.process_body(BODY_00), BODY_00);
@@ -434,6 +466,15 @@ mod tests {
 		assert_eq!(
 			&c.process_body(BODY_02),
 			b"Hello, World !\r\n\r\n\r\ntest\r\nbis\r\n"
+		);
+	}
+
+	#[test]
+	fn body_relaxed_03() {
+		let c = Canonicalization::default().set_body_alg(CanonicalizationType::Relaxed);
+		assert_eq!(
+			&c.process_body(BODY_03),
+			b"Hello, World!\r\n.\r\n.....plop\r\n..test\r\n.re-test\r\n"
 		);
 	}
 }
