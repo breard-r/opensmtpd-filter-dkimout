@@ -191,7 +191,6 @@ def start_tests(test_dir, smtp_port, canonicalization):
     # Testing DKIM signatures
     nb_dkim_ok = 0
     nb_dkim_total = 0
-    fix_perms(f"{maildir.name}/Maildir")
     maildir_glob = f"{maildir.name}/Maildir/new/*"
     nb_sleep = 0
     while True:
@@ -202,6 +201,7 @@ def start_tests(test_dir, smtp_port, canonicalization):
         if len(glob.glob(maildir_glob)) == nb_total:
             break
     kill_opensmtpd(pid_smtpd)
+    fix_perms(f"{maildir.name}/Maildir")
     for test_msg in glob.glob(maildir_glob):
         nb_dkim_total += 1
         nb_dkim_ok += test_dkim(test_msg)
