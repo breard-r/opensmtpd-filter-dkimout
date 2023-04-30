@@ -216,8 +216,8 @@ def start_tests(test_dir, smtp_port, canonicalization):
 def main():
     test_dir = pathlib.Path(__file__).parent.resolve()
     os.chdir(test_dir.parent)
-    start_tests(test_dir, DEFAULT_PORT, "relaxed/relaxed")
     start_tests(test_dir, DEFAULT_PORT, "simple/simple")
+    start_tests(test_dir, DEFAULT_PORT, "relaxed/relaxed")
 
 
 if __name__ == "__main__":
