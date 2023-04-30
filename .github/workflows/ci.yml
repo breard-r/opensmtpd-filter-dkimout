@@ -2,7 +2,7 @@ name: ci
 on: [push, pull_request]
 
 jobs:
-  test:
+  unit-test:
     name: Cargo build & test
     runs-on: ubuntu-latest
     strategy:
@@ -20,9 +20,9 @@ jobs:
       - name: Install Rust ${{ matrix.rust }}
         uses: actions-rs/toolchain@v1
         with:
-            toolchain: ${{ matrix.rust }}
-            override: true
-            profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          profile: minimal
       - name: Run cargo build
         uses: actions-rs/cargo@v1
         with:
@@ -33,6 +33,32 @@ jobs:
         with:
           command: test
           args: --verbose --all-features
+  integration-test:
+    name: Integration test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Apt update
+        run: sudo apt update
+      - name: Install Python
+        run: sudo apt install -y python3
+      - name: Install dkimpy
+        run: sudo apt install -y python3-dkim python3-dnspython python3-nacl python3-authres
+      - name: Install OpenSMTPD
+        run: sudo apt install -y opensmtpd
+      - name: Install Rust stable
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+      - name: Run cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --verbose --all-features
+      - name: Run the integration test
+        run: ./tests/start_test.py
   cargo-fmt:
     name: Cargo fmt
     runs-on: ubuntu-latest
