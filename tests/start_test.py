@@ -198,10 +198,10 @@ def start_tests(test_dir, smtp_port, canonicalization):
         if nb_sleep > 6:
             fail("Some messages have not been received.")
         time.sleep(nb_sleep)
+        fix_perms(f"{maildir.name}/Maildir")
         if len(glob.glob(maildir_glob)) == nb_total:
             break
     kill_opensmtpd(pid_smtpd)
-    fix_perms(f"{maildir.name}/Maildir")
     for test_msg in glob.glob(maildir_glob):
         nb_dkim_total += 1
         nb_dkim_ok += test_dkim(test_msg)
