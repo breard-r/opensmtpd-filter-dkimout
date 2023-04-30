@@ -64,7 +64,7 @@ jobs:
         with:
           command: build
           args: --verbose --all-features
-      - name: Run the integration test using relaxed/relaxed
+      - name: Run the integration test
         run: ./tests/start_test.py ${{ matrix.canonicalization }}
   cargo-fmt:
     name: Cargo fmt
