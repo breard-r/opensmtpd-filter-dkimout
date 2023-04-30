@@ -163,8 +163,13 @@ def start_tests(test_dir, maildir, smtp_port):
     nb_dkim_ok = 0
     nb_dkim_total = 0
     maildir_glob = f"{maildir.name}/Maildir/new/*"
+    nb_sleep = 0
     while len(glob.glob(maildir_glob)) < nb_total:
-        time.sleep(1)
+        nb_sleep += 1
+        if nb_sleep > 6:
+            print("Some messages have not been received.", file=sys.stderr)
+            sys.exit(1)
+        time.sleep(nb_sleep)
     for test_msg in glob.glob(maildir_glob):
         nb_dkim_total += 1
         nb_dkim_ok += test_dkim(test_msg)
