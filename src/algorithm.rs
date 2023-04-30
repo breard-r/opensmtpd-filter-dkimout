@@ -54,7 +54,7 @@ impl Algorithm {
 			}
 			Self::Rsa2048Sha256 | Self::Rsa3072Sha256 | Self::Rsa4096Sha256 => {
 				let private_key = RsaPrivateKey::from_pkcs8_der(&pk)?;
-				let signing_key = RsaSigningKey::<Sha256>::new_with_prefix(private_key);
+				let signing_key = RsaSigningKey::<Sha256>::new(private_key);
 				let signature = signing_key.sign_prehash(data)?;
 				Ok(signature.to_vec())
 			}
