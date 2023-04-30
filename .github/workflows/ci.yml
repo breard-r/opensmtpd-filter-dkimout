@@ -59,9 +59,9 @@ jobs:
         with:
           command: build
           args: --verbose --all-features
-      - name: Run the integration test
+      - name: Run the integration test using simple/simple
         run: ./tests/start_test.py "simple/simple"
-      - name: Run the integration test
+      - name: Run the integration test using relaxed/relaxed
         run: ./tests/start_test.py "relaxed/relaxed"
   cargo-fmt:
     name: Cargo fmt
