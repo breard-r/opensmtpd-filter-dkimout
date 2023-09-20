@@ -59,10 +59,10 @@ WHERE
 	AND algorithm = $3";
 
 pub async fn init(cnf: &Config) -> Result<SqlitePool> {
-	let mut db_options = SqliteConnectOptions::new()
+	let db_options = SqliteConnectOptions::new()
 		.filename(cnf.key_data_base())
-		.create_if_missing(true);
-	db_options.log_statements(log::LevelFilter::Trace);
+		.create_if_missing(true)
+		.log_statements(log::LevelFilter::Trace);
 	let db_pool = SqlitePoolOptions::new().connect_with(db_options).await?;
 	sqlx::migrate!().run(&db_pool).await?;
 	Ok(db_pool)
